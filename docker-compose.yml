@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Dolibarr ERP
+  dolibarr:
+    image: dolibarr/dolibarr:latest
+    container_name: dolibarr-panel
+    restart: unless-stopped
+    ports:
+      - "${DOLIBARR_PORT:-8080}:80"
+    environment:
+      - DOLIBARR_DB_HOST=mysql
+      - DOLIBARR_DB_USER=${MYSQL_USER:-dolibarr}
+      - DOLIBARR_DB_PASSWORD=${MYSQL_PASSWORD:-dolibarr_secure_pass}
+      - DOLIBARR_DB_NAME=${MYSQL_DATABASE:-dolibarr}
+      - DOLIBARR_DB_PORT=3306
+      - DOLIBARR_DB_TYPE=mysqli
+      - DOLIBARR_ADMIN_PASSWORD=${DOLIBARR_ADMIN_PASSWORD:-admin123}
+      - DOLIBARR_URL_ROOT=http://localhost:${DOLIBARR_PORT:-8080}
+      - PHP_MEMORY_LIMIT=256M
+      - PHP_UPLOAD_MAX_FILESIZE=20M
+    volumes:
+      - dolibarr_documents:/var/www/html/documents
+      - dolibarr_custom:/var/www/html/custom
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - dolibarr-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: dolibarr-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_secure_password}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-dolibarr}
+      - MYSQL_USER=${MYSQL_USER:-dolibarr}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-dolibarr_secure_pass}
+    volumes:
+      - dolibarr_mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      dolibarr-network:
+        aliases:
+          - mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_secure_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO
+
+networks:
+  dolibarr-network:
+    driver: bridge
+
+volumes:
+  dolibarr_documents:
+    driver: local
+  dolibarr_custom:
+    driver: local
+  dolibarr_mysql_data:
+    driver: local

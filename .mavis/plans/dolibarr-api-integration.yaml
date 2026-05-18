@@ -1,0 +1,179 @@
+version: 1
+plan:
+  name: 'dolibarr-api-integration'
+  description: 'Connect all frontend pages to Dolibarr API - replace mock data with real API calls'
+  max_concurrency: 4
+  max_consecutive_failures: 3
+  max_cycles: 10
+
+tasks:
+  # Phase 1: Core pages that already have partial API integration
+  - id: phase1-core
+    title: 'Update core listing pages (Musteriler, Urunler, Siparisler, Faturalar)'
+    prompt: |
+      Update these pages to use real Dolibarr API:
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Musteriler.tsx - Use thirdPartyApi.list()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Urunler.tsx - Use productApi.list() (already has loading/error handling)
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Siparisler.tsx - Use orderApi.list()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Faturalar.tsx - Use invoiceApi.list()
+      
+      Remove any mock data arrays. Import APIs from '@/lib/dolibarr'.
+      Add useEffect for data loading with loading/error states.
+      Read src\lib\dolibarr.ts for available API functions.
+      Read src\lib\types\dolibarr.ts for type definitions.
+      
+      Preserve existing UI/UX. Only replace data layer.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify all mock data removed and pages use real API calls from dolibarr.ts'
+    timeout_ms: 1800000
+
+  - id: phase2-forms
+    title: 'Update form pages (YeniMusteri, YeniUrun, YeniSiparis)'
+    prompt: |
+      Update create/form pages to use Dolibarr API for:
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\YeniMusteri.tsx - Use thirdPartyApi.create()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\YeniUrun.tsx - Use productApi.create(), warehouseApi.list()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\YeniSiparis.tsx - Use orderApi.create(), thirdPartyApi.list(), productApi.list()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\YeniTeklif.tsx - Use proposalApi.create()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\YeniAlisFaturasi.tsx - Use supplier invoice API
+      
+      Import APIs from '@/lib/dolibarr'.
+      Ensure form validation uses CreateThirdPartyDto, CreateProductDto, CreateOrderDto types.
+      Add success/error handling for API calls.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify forms submit to Dolibarr API and handle responses correctly'
+    timeout_ms: 1800000
+
+  - id: phase3-finance
+    title: 'Update financial pages (Tahsilatlar, Tediye, Giderler, CekSenet)'
+    prompt: |
+      Update financial management pages:
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Tahsilatlar.tsx - Use paymentApi.list()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\YeniTahsilat.tsx - Use paymentApi.create()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Giderler.tsx - Use expensereport API
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\CekSenet.tsx - Use bank account API or custom tracking
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\NakitYonetimi.tsx - Use bankaccounts API
+      
+      Map Dolibarr payment types to UI payment methods.
+      Handle KDV calculations using tva_tx from products.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify financial data loads from Dolibarr, calculations are correct'
+    timeout_ms: 1800000
+
+  - id: phase4-detail-pages
+    title: 'Update detail pages (MusteriDetay, SiparisDetay, TeklifDetay, UrunDetay)'
+    prompt: |
+      Update detail/view pages:
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\MusteriDetay.tsx - Use thirdPartyApi.get(id)
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\SiparisDetay.tsx - Use orderApi.get(id)
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\TeklifDetay.tsx - Use proposalApi.get(id)
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\UrunDetay.tsx - Use productApi.get(id), productApi.getStock(id)
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Faturalar.tsx detail modal - Use invoiceApi.get(id)
+      
+      Load data based on URL params (useParams from react-router).
+      Add tab navigation for related data (orders, invoices, contacts).
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify detail pages load correct data from Dolibarr using ID from URL'
+    timeout_ms: 1800000
+
+  - id: phase5-stock-warehouse
+    title: 'Update stock and warehouse pages (Stok, Depolar)'
+    prompt: |
+      Update inventory management pages:
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Stok.tsx - Use stockApi.listMovements(), warehouseApi.list()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Depolar.tsx - Use warehouseApi.list()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\KarMarjiAnalizi.tsx - Use product prices from productApi.getPrice()
+      
+      Show stock movements with product names from products table join.
+      Calculate profit margins using cost_price vs price.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify stock data shows real movements and warehouse levels'
+    timeout_ms: 1800000
+
+  - id: phase6-reports-dashboard
+    title: 'Update reporting and dashboard pages'
+    prompt: |
+      Update analytics and reporting pages:
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Dashboard.tsx - Aggregate data from orders, invoices, payments
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\RaporMerkezi.tsx - Use orderApi.list(), invoiceApi.list() with date filters
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\TekrarEdenSiparisler.tsx - Filter orders by recurring criteria
+      
+      Calculate KPIs: total sales, pending orders, unpaid invoices, stock levels.
+      Use recharts for chart components.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify dashboard aggregates correct totals from Dolibarr data'
+    timeout_ms: 1800000
+
+  - id: phase7-admin-other
+    title: 'Update admin and remaining pages (Yonetim, Ayarlar, Bildirimler)'
+    prompt: |
+      Update admin and miscellaneous pages:
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Yonetim.tsx - Use user API if available, else skip
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Ayarlar.tsx - Already has API config (keep as is)
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Bildirimler.tsx - Use notification system
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\Sirketler.tsx - Use company setup API
+      
+      For Yonetim.tsx, remove mockUsers completely and show empty state if user API not available.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify admin pages load correctly, mock users removed from Yonetim'
+    timeout_ms: 1800000
+
+  - id: phase8-printing-tracking
+    title: 'Update printing and tracking pages (TermalBaski, KargoTakip, BarkodBaski)'
+    prompt: |
+      Update printing and tracking functionality:
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\TermalBaski.tsx - Use productApi.list(), orderApi.list()
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\KargoTakip.tsx - Track shipments linked to orders
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\BarkodBaski.tsx - Use productApi.list() with barcode
+      - C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel\src\pages\EFatura.tsx - e-Fatura integration (keep as-is if external API)
+      
+      For TermalBaski, load products for label printing.
+      For KargoTakip, link to order delivery status.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify printing pages load real product/order data'
+    timeout_ms: 1800000
+
+  - id: phase9-types-api
+    title: 'Extend Dolibarr types and API functions if needed'
+    prompt: |
+      Review and extend type definitions and API functions:
+      - Read all pages to identify missing type fields
+      - Add missing types to src/lib/types/dolibarr.ts
+      - Add missing API functions to src/lib/dolibarr.ts if Dolibarr supports them
+      
+      Common missing types needed:
+      - Payment types and methods
+      - Order/Invoice line items
+      - Stock movement details
+      - Expense report fields
+      - Bank account info
+      
+      DO NOT create new API endpoints - only use existing Dolibarr REST API.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify all types are complete, no TypeScript errors across project'
+    timeout_ms: 1800000
+
+  - id: phase10-verification
+    title: 'Final verification - run TypeScript check and build'
+    prompt: |
+      Run final verification:
+      1. cd C:\Users\serha\OneDrive\Belgeler\GitHub\dolibarr-panel
+      2. Run: npx tsc --noEmit
+      3. Fix any TypeScript errors
+      4. Run: pnpm build
+      5. Ensure build succeeds
+      
+      Report any errors that need manual review.
+    assigned_to: developer
+    verified_by: tester
+    verify_prompt: 'Verify TypeScript compiles without errors, build succeeds'
+    timeout_ms: 1800000
