@@ -24,9 +24,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={selectId} className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={selectId} className="block text-sm font-medium text-slate-700 mb-1.5">
             {label}
-            {props.required && <span className="text-danger ml-1">*</span>}
+            {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
         )}
         <div className="relative">
@@ -34,10 +34,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={cn(
-              'w-full h-10 px-3 pr-10 rounded-md border bg-white text-sm appearance-none',
-              'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-              'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
-              error ? 'border-danger focus:ring-danger' : 'border-gray-300',
+              'w-full h-10 px-3 pr-10 rounded-xl border border-slate-200 bg-white text-sm text-slate-900 appearance-none',
+              'focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500',
+              'transition-all duration-150',
+              'disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed',
+              error ? 'border-red-500 focus:ring-red-500/30 focus:border-red-500' : '',
               className
             )}
             onChange={(e) => onChange?.(e.target.value)}
@@ -54,10 +55,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
-        {error && <p className="mt-1 text-sm text-danger">{error}</p>}
-        {hint && !error && <p className="mt-1 text-sm text-gray-500">{hint}</p>}
+        {error && <p className="mt-1.5 text-sm text-red-500">{error}</p>}
+        {hint && !error && <p className="mt-1.5 text-sm text-slate-500">{hint}</p>}
       </div>
     );
   }

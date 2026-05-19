@@ -22,8 +22,8 @@ export function StatCard({
   value,
   change,
   changeLabel,
-  iconColor = 'text-primary',
-  iconBgColor = 'bg-blue-100',
+  iconColor = 'text-teal-600',
+  iconBgColor = 'bg-teal-100',
   title,
   trend,
   variant,
@@ -37,7 +37,7 @@ export function StatCard({
   const renderIcon = () => {
     if (typeof icon === 'function') {
       const IconComponent = icon as LucideIcon;
-      return <IconComponent className="w-6 h-6" />;
+      return <IconComponent className="w-5 h-5" />;
     }
     return icon;
   };
@@ -47,26 +47,26 @@ export function StatCard({
       <div className={cn('stat-icon', iconBgColor)}>
         <div className={iconColor}>{renderIcon()}</div>
       </div>
-      <div className="flex-1">
-        <p className="stat-label">{displayLabel}</p>
+      <div className="flex-1 min-w-0">
+        <p className="stat-label truncate">{displayLabel}</p>
         <p className="stat-value mt-1">{value}</p>
         {changeValue !== undefined && (
           <div className="flex items-center gap-1 mt-2">
             {isPositive ? (
-              <TrendingUp className="w-4 h-4 text-green-600" />
+              <TrendingUp className="w-4 h-4 text-emerald-600" />
             ) : (
               <TrendingDown className="w-4 h-4 text-red-600" />
             )}
             <span
               className={cn(
                 'text-sm font-medium',
-                isPositive ? 'text-green-600' : 'text-red-600'
+                isPositive ? 'text-emerald-600' : 'text-red-600'
               )}
             >
               {Math.abs(changeValue).toFixed(1)}%
             </span>
             {changeLabel && (
-              <span className="text-sm text-gray-400">{changeLabel}</span>
+              <span className="text-sm text-slate-400 truncate">{changeLabel}</span>
             )}
           </div>
         )}

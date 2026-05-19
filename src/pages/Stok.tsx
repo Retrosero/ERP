@@ -73,8 +73,8 @@ export function Stok() {
         warehouseApi.list().catch(() => []),
       ]);
 
-      const productMap = new Map(productsData.map(p => [p.id, p]));
-      const warehouseMap = new Map(warehousesData.map(w => [w.id, w]));
+      const productMap = new Map<number, Product>(productsData.map(p => [p.id, p] as [number, Product]));
+      const warehouseMap = new Map<number, Warehouse>(warehousesData.map(w => [w.id, w] as [number, Warehouse]));
 
       const displayMovements: StockMovementDisplay[] = movementsData.map(m => ({
         id: m.id || Math.random(),

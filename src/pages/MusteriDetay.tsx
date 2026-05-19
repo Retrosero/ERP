@@ -243,7 +243,7 @@ export default function MusteriDetay() {
             <dl className="space-y-3">
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <dt className="text-sm text-gray-500">Vergi Numarası</dt>
-                <dd className="text-sm font-medium">{customer.vat_number || customer.idprof1 || '-'}</dd>
+                <dd className="text-sm font-medium">{customer.vat_number || '-'}</dd>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <dt className="text-sm text-gray-500">Müşteri Kodu</dt>

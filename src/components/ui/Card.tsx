@@ -11,16 +11,16 @@ interface CardProps {
 const paddingClasses = {
   none: '',
   sm: 'p-4',
-  md: 'p-6',
-  lg: 'p-8',
+  md: 'p-5',
+  lg: 'p-6',
 };
 
 export function Card({ children, className, hover = false, padding = 'md', onClick }: CardProps) {
   return (
     <div
       className={cn(
-        'bg-white rounded-xl shadow-sm border border-gray-100',
-        hover && 'transition-all duration-200 hover:shadow-md hover:border-blue-100 cursor-pointer',
+        'bg-white rounded-2xl border border-slate-200/60 shadow-sm transition-all duration-200',
+        hover && 'hover:shadow-md hover:border-slate-200 cursor-pointer',
         paddingClasses[padding],
         className
       )}
@@ -60,7 +60,7 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className }: CardTitleProps) {
   return (
-    <h3 className={cn('text-lg font-semibold text-gray-900', className)}>
+    <h3 className={cn('text-lg font-semibold text-slate-900', className)}>
       {children}
     </h3>
   );

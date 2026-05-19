@@ -7,270 +7,298 @@ import {
   Coins,
   Plus,
   FileText,
-  TrendingDown,
   ArrowRight,
   Clock,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Receipt,
+  Users,
+  DollarSign,
+  ArrowUpRight,
+  ArrowDownLeft,
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
-import { Card, CardHeader, CardTitle, StatCard, Alert } from '@/components/ui';
-import { formatCurrency, formatDate, getRelativeTime, cn } from '@/lib/utils';
-import { orderApi, invoiceApi, productApi, stockApi } from '@/lib/dolibarr';
-import type { Order, Invoice, Product, StockMovement } from '@/lib/types/dolibarr';
+import { Card, StatCard, Badge, Button } from '@/components/ui';
+import { formatCurrency, formatDate, cn } from '@/lib/utils';
 
 export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [todaySales, setTodaySales] = useState(0);
-  const [openOrders, setOpenOrders] = useState(0);
-  const [criticalStock, setCriticalStock] = useState(0);
-  const [pendingCollections, setPendingCollections] = useState(0);
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
-  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
 
-  // Fetch dashboard data from Dolibarr
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Mock data for demonstration - replace with actual API calls
+  const [stats] = useState({
+    todaySales: 15420.50,
+    weekSales: 89500.00,
+    monthOrders: 47,
+    pendingCollections: 34250.00,
+    activeCustomers: 156,
+    lowStockCount: 8,
+  });
 
-    try {
-      // Fetch open orders (status 1 = validated)
-      const orders = await orderApi.list({ limit: 5, sortfield: 'date_commande', sortorder: 'DESC' });
-      setRecentOrders(orders);
-      setOpenOrders(orders.length);
+  const recentOrders = [
+    { id: 1, ref: 'SP-2024-001', customer: 'ABC Teknoloji Ltd.', amount: 12450.00, date: '2024-01-18', status: 'completed' },
+    { id: 2, ref: 'SP-2024-002', customer: 'XYZ Muhendislik', amount: 8900.00, date: '2024-01-17', status: 'pending' },
+    { id: 3, ref: 'SP-2024-003', customer: 'Def Sanayi A.Ş.', amount: 15600.00, date: '2024-01-17', status: 'processing' },
+    { id: 4, ref: 'SP-2024-004', customer: 'GHI Ticaret', amount: 4250.00, date: '2024-01-16', status: 'completed' },
+    { id: 5, ref: 'SP-2024-005', customer: 'JKL Mühendislik', amount: 7800.00, date: '2024-01-16', status: 'pending' },
+  ];
 
-      // Calculate today's sales
-      const today = new Date().toISOString().split('T')[0];
-      const todayOrdersTotal = orders
-        .filter(o => o.date_commande?.startsWith(today))
-        .reduce((sum, o) => sum + (o.total_ttc || 0), 0);
-      setTodaySales(todayOrdersTotal);
+  const topProducts = [
+    { name: 'Ürün A', sold: 125, revenue: 45600 },
+    { name: 'Ürün B', sold: 98, revenue: 38400 },
+    { name: 'Ürün C', sold: 87, revenue: 32500 },
+    { name: 'Ürün D', sold: 76, revenue: 28900 },
+  ];
 
-      // Fetch invoices for pending collections
-      const invoices = await invoiceApi.list({ limit: 50, sortfield: 'date_valid', sortorder: 'DESC' });
-      const pendingTotal = invoices
-        .filter(inv => inv.status !== 2 && inv.remain_to_pay)
-        .reduce((sum, inv) => sum + (inv.remain_to_pay || 0), 0);
-      setPendingCollections(pendingTotal);
-
-      // Fetch products for critical stock
-      const products = await productApi.list({ limit: 100 });
-      const critical = products.filter(p =>
-        p.seuil_stock_alerte && p.stock_reel && p.stock_reel <= p.seuil_stock_alerte
-      );
-      setCriticalStock(critical.length);
-      setLowStockProducts(critical.slice(0, 5));
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Veriler yüklenirken hata oluştu');
-      console.error('Dashboard fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const recentActivities = [
+    { type: 'order', message: 'Yeni sipariş oluşturuldu', detail: 'SP-2024-001 - 12.450 ₺', time: '5 dk önce' },
+    { type: 'payment', message: 'Tahsilat yapıldı', detail: '3.500 ₺ - Kasa TL', time: '15 dk önce' },
+    { type: 'invoice', message: 'Fatura onaylandı', detail: 'FAT-2024-045', time: '30 dk önce' },
+    { type: 'stock', message: 'Stok güncellendi', detail: 'Ürün A: +50 adet', time: '1 saat önce' },
+  ];
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    // Simulate loading
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'order':
-        return <ShoppingCart className="w-4 h-4 text-blue-500" />;
-      case 'invoice':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'proposal':
-        return <FileText className="w-4 h-4 text-purple-500" />;
-      case 'payment':
-        return <Coins className="w-4 h-4 text-amber-500" />;
-      case 'stock':
-        return <Package className="w-4 h-4 text-orange-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
-    }
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, { variant: 'success' | 'warning' | 'info' | 'neutral'; label: string }> = {
+      completed: { variant: 'success', label: 'Tamamlandı' },
+      pending: { variant: 'warning', label: 'Bekliyor' },
+      processing: { variant: 'info', label: 'İşleniyor' },
+    };
+    const { variant, label } = statusMap[status] || { variant: 'neutral', label: status };
+    return <Badge variant={variant}>{label}</Badge>;
   };
 
-  const quickActions = [
-    { id: 'new-order', label: 'Yeni Sipariş', icon: Plus, path: '/siparisler/yeni', color: 'bg-blue-500' },
-    { id: 'new-proposal', label: 'Yeni Teklif', icon: FileText, path: '/teklifler/yeni', color: 'bg-green-500' },
-    { id: 'stock-check', label: 'Stok Durumu', icon: Package, path: '/urunler', color: 'bg-purple-500' },
-    { id: 'collections', label: 'Tahsilat', icon: Coins, path: '/tahsilatlar', color: 'bg-amber-500' },
-  ];
+  const getActivityIcon = (type: string) => {
+    const icons: Record<string, { icon: typeof ShoppingCart; bg: string; color: string }> = {
+      order: { icon: ShoppingCart, bg: 'bg-blue-100', color: 'text-blue-600' },
+      payment: { icon: DollarSign, bg: 'bg-emerald-100', color: 'text-emerald-600' },
+      invoice: { icon: Receipt, bg: 'bg-purple-100', color: 'text-purple-600' },
+      stock: { icon: Package, bg: 'bg-amber-100', color: 'text-amber-600' },
+    };
+    const config = icons[type] || { icon: Clock, bg: 'bg-slate-100', color: 'text-slate-600' };
+    return (
+      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', config.bg)}>
+        <config.icon className={cn('w-5 h-5', config.color)} />
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="flex items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+            <span className="text-slate-500">Veriler yükleniyor...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
-      <div className="space-y-6 animate-fadeIn">
+      <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="page-title">Dashboard</h1>
             <p className="page-subtitle">
               {new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
-          <div className="text-sm text-gray-500">
-            Dolibarr verileri ile güncelleniyor
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" size="sm" icon={<FileText className="w-4 h-4" />}>
+              Rapor İndir
+            </Button>
+            <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />}>
+              Yeni Sipariş
+            </Button>
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <Alert type="error" title="Veri Yükleme Hatası">
-            {error}
-            <p className="text-sm mt-1">Lütfen Dolibarr bağlantınızı Ayarlar sayfasından kontrol edin.</p>
-          </Alert>
-        )}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            icon={<TrendingUp className="w-5 h-5" />}
+            label="Bugünün Satışı"
+            value={formatCurrency(stats.todaySales, false)}
+            change={12.5}
+            iconColor="text-teal-600"
+            iconBgColor="bg-teal-100"
+          />
+          <StatCard
+            icon={<DollarSign className="w-5 h-5" />}
+            label="Haftalık Satış"
+            value={formatCurrency(stats.weekSales, false)}
+            change={8.3}
+            iconColor="text-emerald-600"
+            iconBgColor="bg-emerald-100"
+          />
+          <StatCard
+            icon={<ShoppingCart className="w-5 h-5" />}
+            label="Aylık Sipariş"
+            value={stats.monthOrders}
+            change={-2.1}
+            iconColor="text-purple-600"
+            iconBgColor="bg-purple-100"
+          />
+          <StatCard
+            icon={<Coins className="w-5 h-5" />}
+            label="Bekleyen Tahsilat"
+            value={formatCurrency(stats.pendingCollections, false)}
+            iconColor="text-amber-600"
+            iconBgColor="bg-amber-100"
+          />
+        </div>
 
-        {/* Loading State */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
-            <p className="text-gray-500">Veriler yükleniyor...</p>
-          </div>
-        ) : (
-          <>
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard
-                icon={<TrendingUp className="w-6 h-6" />}
-                label="Bugünün Satışı"
-                value={formatCurrency(todaySales, false)}
-                iconColor="text-blue-600"
-                iconBgColor="bg-blue-100"
-              />
-              <StatCard
-                icon={<ShoppingCart className="w-6 h-6" />}
-                label="Açık Siparişler"
-                value={openOrders}
-                iconColor="text-purple-600"
-                iconBgColor="bg-purple-100"
-              />
-              <StatCard
-                icon={<AlertCircle className="w-6 h-6" />}
-                label="Kritik Stok"
-                value={criticalStock}
-                iconColor="text-red-600"
-                iconBgColor="bg-red-100"
-              />
-              <StatCard
-                icon={<Coins className="w-6 h-6" />}
-                label="Tahsilat Bekleyen"
-                value={formatCurrency(pendingCollections, false)}
-                iconColor="text-green-600"
-                iconBgColor="bg-green-100"
-              />
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Recent Activity */}
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Son Siparişler</CardTitle>
-                    <Link
-                      to="/siparisler"
-                      className="text-sm text-primary hover:underline flex items-center gap-1"
-                    >
-                      Tümünü Gör
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </CardHeader>
-                  {recentOrders.length > 0 ? (
-                    <div className="divide-y divide-gray-100">
-                      {recentOrders.slice(0, 5).map((order) => (
-                        <Link
-                          key={order.id}
-                          to={`/siparisler/${order.id}`}
-                          className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <ShoppingCart className="w-4 h-4 text-blue-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900">{order.ref}</p>
-                            <p className="text-sm text-gray-500 truncate">
-                              {formatCurrency(order.total_ttc || 0)}
-                            </p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="text-xs text-gray-400">
-                              {order.date_commande ? formatDate(order.date_commande) : '-'}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center text-gray-500">
-                      <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                      <p>Henüz sipariş bulunamadı</p>
-                    </div>
-                  )}
-                </Card>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Orders - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <Card padding="none">
+              <div className="p-5 border-b border-slate-100/60 flex items-center justify-between">
+                <h3 className="font-semibold text-slate-900">Son Siparişler</h3>
+                <Link to="/siparisler" className="text-sm text-teal-600 hover:text-teal-700 flex items-center gap-1 font-medium">
+                  Tümünü Gör <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
-
-              {/* Quick Actions */}
-              <div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Hızlı İşlemler</CardTitle>
-                  </CardHeader>
-                  <div className="grid grid-cols-2 gap-3">
-                    {quickActions.map((action) => {
-                      const Icon = action.icon;
-                      return (
-                        <Link
-                          key={action.id}
-                          to={action.path}
-                          className={cn(
-                            'flex flex-col items-center justify-center p-4 rounded-lg text-white transition-transform hover:scale-105',
-                            action.color
-                          )}
-                        >
-                          <Icon className="w-6 h-6 mb-2" />
-                          <span className="text-sm font-medium">{action.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </Card>
-
-                {/* Low Stock Warning */}
-                <Card className="mt-4">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      Kritik Stok Uyarısı
-                    </CardTitle>
-                  </CardHeader>
-                  {lowStockProducts.length > 0 ? (
-                    <div className="space-y-3">
-                      {lowStockProducts.map((product) => (
-                        <div key={product.id} className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700 truncate flex-1">{product.label}</span>
-                          <span className="text-sm font-medium text-red-600">
-                            {product.stock_reel || 0} / {product.seuil_stock_alerte || 0}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 text-center py-4">Kritik stok yok</p>
-                  )}
+              <div className="divide-y divide-slate-100/60">
+                {recentOrders.map((order) => (
                   <Link
-                    to="/urunler?filter=critical"
-                    className="block mt-4 text-sm text-primary hover:underline text-center"
+                    key={order.id}
+                    to={`/siparisler/${order.id}`}
+                    className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition-colors"
                   >
-                    Tüm kritik stokları gör
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-blue-500/20">
+                      <ShoppingCart className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-slate-900">{order.ref}</span>
+                        {getStatusBadge(order.status)}
+                      </div>
+                      <p className="text-sm text-slate-500 truncate">{order.customer}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-base font-bold text-slate-900">{formatCurrency(order.amount, false)}</p>
+                      <p className="text-xs text-slate-400">{formatDate(order.date)}</p>
+                    </div>
                   </Link>
-                </Card>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <Card>
+              <h3 className="font-semibold text-slate-900 mb-4">Hızlı İşlemler</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Link to="/siparisler/yeni" className="quick-action quick-action-primary">
+                  <Plus className="w-5 h-5" />
+                  <span className="text-sm font-medium">Yeni Sipariş</span>
+                </Link>
+                <Link to="/teklifler/yeni" className="quick-action quick-action-success">
+                  <FileText className="w-5 h-5" />
+                  <span className="text-sm font-medium">Yeni Teklif</span>
+                </Link>
+                <Link to="/tahsilatlar/yeni" className="quick-action quick-action-warning">
+                  <Coins className="w-5 h-5" />
+                  <span className="text-sm font-medium">Tahsilat</span>
+                </Link>
+                <Link to="/hizli-satis" className="quick-action quick-action-info">
+                  <Receipt className="w-5 h-5" />
+                  <span className="text-sm font-medium">Hızlı Satış</span>
+                </Link>
+              </div>
+            </Card>
+
+            {/* Recent Activity */}
+            <Card>
+              <h3 className="font-semibold text-slate-900 mb-4">Son Aktiviteler</h3>
+              <div className="space-y-4">
+                {recentActivities.map((activity, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    {getActivityIcon(activity.type)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900">{activity.message}</p>
+                      <p className="text-xs text-slate-500 truncate">{activity.detail}</p>
+                    </div>
+                    <span className="text-xs text-slate-400 flex-shrink-0">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Bottom Row - Two Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Top Products */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-900">En Çok Satan Ürünler</h3>
+              <Link to="/rapor-merkezi" className="text-sm text-teal-600 hover:text-teal-700 font-medium">
+                Detaylı Rapor
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {topProducts.map((product, index) => (
+                <div key={index} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-sm">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate">{product.name}</p>
+                    <p className="text-xs text-slate-500">{product.sold} adet satış</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-slate-900">{formatCurrency(product.revenue, false)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Critical Stock Warning */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                Kritik Stok Uyarısı
+              </h3>
+              <Link to="/urunler?filter=critical" className="text-sm text-teal-600 hover:text-teal-700 font-medium">
+                Stok Yönetimi
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {[
+                { name: 'Ürün X', current: 5, min: 10 },
+                { name: 'Ürün Y', current: 8, min: 15 },
+                { name: 'Ürün Z', current: 3, min: 10 },
+              ].map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-xl bg-red-50/50">
+                  <span className="text-sm font-medium text-slate-900">{item.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-red-600">{item.current}</span>
+                    <span className="text-xs text-slate-400">/ {item.min}</span>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-2 text-center">
+                <Badge variant="danger">{stats.lowStockCount} ürün kritik seviyede</Badge>
               </div>
             </div>
-          </>
-        )}
+          </Card>
+        </div>
       </div>
     </MainLayout>
   );

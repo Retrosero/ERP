@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Package, AlertTriangle, Loader2 } from 'lucide-react';
+import { Plus, Search, Package, AlertTriangle, Loader2, Package2, Tag, TrendingUp, ChevronRight } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import { Card, CardHeader, CardTitle, Button, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
 import { formatCurrency, formatNumber, cn } from '@/lib/utils';
@@ -71,32 +71,40 @@ export function Urunler() {
     return 'success';
   };
 
+  const getTypeBadge = (type: number | undefined) => {
+    if (type === 1) return <Badge variant="primary">Hizmet</Badge>;
+    return <Badge variant="info">Ürün</Badge>;
+  };
+
   const columns = [
     {
       key: 'ref',
       header: 'Kod',
       width: '100px',
       render: (value: unknown) => (
-        <span className="font-mono text-sm">{value as string || '-'}</span>
+        <span className="font-mono text-xs px-2 py-1 bg-slate-100 rounded-lg">{value as string || '-'}</span>
       ),
     },
     {
       key: 'label',
       header: 'Ürün Adı',
       sortable: true,
-      render: (value: unknown) => (
-        <div className="flex items-center gap-2">
-          <Package className="w-4 h-4 text-gray-400" />
-          <span className="font-medium">{value as string}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'barcode',
-      header: 'Barkod',
-      render: (value: unknown) => (
-        <span className="font-mono text-sm text-gray-600">{value as string || '-'}</span>
-      ),
+      render: (value: unknown, record: unknown) => {
+        const product = record as Product;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+              <Package className="w-5 h-5 text-slate-600" />
+            </div>
+            <div>
+              <span className="font-medium text-slate-900">{value as string}</span>
+              {product.barcode && (
+                <p className="text-xs text-slate-500 mt-0.5 font-mono">{product.barcode}</p>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'stock_reel',
@@ -113,9 +121,9 @@ export function Urunler() {
               )} />
             )}
             <span className={cn(
-              'font-medium',
+              'font-semibold',
               status === 'danger' ? 'text-red-600' :
-              status === 'warning' ? 'text-amber-600' : 'text-gray-900'
+              status === 'warning' ? 'text-amber-600' : 'text-slate-900'
             )}>
               {formatNumber(value as number, 0)}
             </span>
@@ -128,7 +136,7 @@ export function Urunler() {
       header: 'Fiyat',
       align: 'right' as const,
       render: (value: unknown) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-semibold text-slate-900">
           {value ? formatCurrency(value as number) : '-'}
         </span>
       ),
@@ -136,45 +144,92 @@ export function Urunler() {
     {
       key: 'type',
       header: 'Tür',
-      render: (value: unknown) => (
-        <Badge variant={(value as number) === 1 ? 'primary' : 'info'}>
-          {(value as number) === 1 ? 'Hizmet' : 'Ürün'}
-        </Badge>
-      ),
+      render: (value: unknown) => getTypeBadge(value as number | undefined),
     },
     {
       key: 'actions',
       header: '',
-      width: '50px',
+      width: '40px',
       render: () => (
-        <button className="p-1 rounded hover:bg-gray-100">
-          <span className="sr-only">İşlemler</span>
-          <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-            <circle cx="12" cy="5" r="2" />
-            <circle cx="12" cy="12" r="2" />
-            <circle cx="12" cy="19" r="2" />
-          </svg>
-        </button>
+        <Link to="#" className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-teal-600 transition-colors">
+          <ChevronRight className="w-4 h-4" />
+        </Link>
       ),
     },
   ];
+
+  // Calculate stats
+  const totalProducts = products.length;
+  const inStockProducts = products.filter(p => (p.stock_reel || 0) > 0).length;
+  const lowStockProducts = products.filter(p => p.seuil_stock_alerte && (p.stock_reel || 0) <= p.seuil_stock_alerte).length;
+  const outOfStockProducts = products.filter(p => !p.stock_reel || p.stock_reel <= 0).length;
 
   return (
     <MainLayout>
       <div className="space-y-6 animate-fadeIn">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="page-title">Ürünler</h1>
-            <p className="page-subtitle">
+            <h1 className="text-2xl font-bold text-slate-900">Ürünler</h1>
+            <p className="text-sm text-slate-500 mt-1">
               {filteredProducts.length} ürün bulundu
             </p>
           </div>
-          <Link to="/urunler/yeni">
-            <Button icon={<Plus className="w-4 h-4" />}>
-              Yeni Ürün
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/urunler/yeni">
+              <Button variant="primary" icon={<Plus className="w-4 h-4" />}>
+                Yeni Ürün
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-teal-500 to-teal-600 border-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-teal-100 text-sm font-medium">Toplam Ürün</p>
+                <p className="text-3xl font-bold text-white mt-1">{totalProducts}</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+          <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-emerald-100 text-sm font-medium">Stokta Olan</p>
+                <p className="text-3xl font-bold text-white mt-1">{inStockProducts}</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+          <Card className="bg-gradient-to-br from-amber-500 to-amber-600 border-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-amber-100 text-sm font-medium">Düşük Stok</p>
+                <p className="text-3xl font-bold text-white mt-1">{lowStockProducts}</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+          <Card className="bg-gradient-to-br from-red-500 to-red-600 border-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-red-100 text-sm font-medium">Stokta Yok</p>
+                <p className="text-3xl font-bold text-white mt-1">{outOfStockProducts}</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                <Package2 className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Error Message */}
@@ -189,7 +244,7 @@ export function Urunler() {
         <Card padding="sm">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Ürün adı, kod veya barkod ile ara..."
                 value={searchQuery}
@@ -209,19 +264,21 @@ export function Urunler() {
         {/* Loading or Table */}
         {isLoading ? (
           <Card>
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-              <p className="text-gray-500">Ürünler yükleniyor...</p>
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-teal-500 mb-4" />
+              <p className="text-slate-500">Ürünler yükleniyor...</p>
             </div>
           </Card>
         ) : paginatedProducts.length === 0 ? (
           <Card>
-            <div className="flex flex-col items-center justify-center py-12">
-              <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                <Package className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="text-slate-500 font-medium">
                 {searchQuery ? 'Arama sonucu bulunamadı' : 'Ürün bulunamadı'}
               </p>
-              <p className="text-sm text-gray-400 mt-2">
+              <p className="text-sm text-slate-400 mt-2">
                 Dolibarr'da ürün eklemek için yeni ürün butonuna tıklayın.
               </p>
             </div>

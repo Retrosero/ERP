@@ -39,6 +39,7 @@ export default function RaporMerkezi() {
   const [monthlyData, setMonthlyData] = useState<{ month: string; gelir: number; gider: number }[]>([]);
   const [topCustomers, setTopCustomers] = useState<{ name: string; amount: number; invoiceCount: number }[]>([]);
   const [agingData, setAgingData] = useState<{ label: string; amount: number; color: string }[]>([]);
+  const [categoryData, setCategoryData] = useState<{ name: string; value: number }[]>([]);
   const [stats, setStats] = useState({ totalSales: 0, totalExpenses: 0, grossProfit: 0, collectionRate: 0 });
 
   // Fetch report data from Dolibarr
@@ -47,15 +48,15 @@ export default function RaporMerkezi() {
     setError(null);
     try {
       const [invoicesData, ordersData, customersData] = await Promise.all([
-        invoiceApi.list({ limit: 100, sortfield: 'date', sortorder: 'DESC' }).catch(() => []),
-        orderApi.list({ limit: 100, sortfield: 'date_commande', sortorder: 'DESC' }).catch(() => []),
-        thirdPartyApi.list({ limit: 100, mode: 'customer' }).catch(() => []),
+        invoiceApi.list({ limit: 100, sortfield: 'date', sortorder: 'DESC' }).catch(() => [] as Invoice[]),
+        orderApi.list({ limit: 100, sortfield: 'date_commande', sortorder: 'DESC' }).catch(() => [] as Order[]),
+        thirdPartyApi.list({ limit: 100, mode: 'customer' }).catch(() => [] as ThirdParty[]),
       ]);
 
       // Calculate totals
-      const totalSales = invoicesData.reduce((sum, inv) => sum + (inv.total_ttc || 0), 0);
-      const paidInvoices = invoicesData.filter(inv => inv.status === 2);
-      const paidAmount = paidInvoices.reduce((sum, inv) => sum + (inv.total_paye || 0), 0);
+      const totalSales = (invoicesData as Invoice[]).reduce((sum, inv) => sum + ((inv.total_ttc as number) || 0), 0);
+      const paidInvoices = invoicesData.filter((inv: Invoice) => inv.status === 2);
+      const paidAmount = paidInvoices.reduce((sum, inv) => sum + ((inv.total_paye as number) || 0), 0);
       const collectionRate = totalSales > 0 ? Math.round((paidAmount / totalSales) * 100) : 0;
 
       setStats({
@@ -67,14 +68,14 @@ export default function RaporMerkezi() {
 
       // Calculate top customers by invoice total
       const customerTotals = new Map<number, { name: string; amount: number; count: number }>();
-      invoicesData.forEach(inv => {
+      invoicesData.forEach((inv: Invoice) => {
         const socId = inv.socid || inv.fk_soc;
         if (socId) {
           const existing = customerTotals.get(socId) || { name: '', amount: 0, count: 0 };
-          const customer = customersData.find(c => c.id === socId);
+          const customer = (customersData as ThirdParty[]).find(c => c.id === socId);
           customerTotals.set(socId, {
             name: customer?.name || `Müşteri #${socId}`,
-            amount: existing.amount + (inv.total_ttc || 0),
+            amount: existing.amount + ((inv.total_ttc as number) || 0),
             count: existing.count + 1,
           });
         }
@@ -88,7 +89,7 @@ export default function RaporMerkezi() {
       setTopCustomers(topCust);
 
       // Age analysis
-      const now = Date.now();
+      const currentTimestamp = Date.now();
       const aging = [
         { label: 'Vadesinde', amount: 0, color: '#10b981' },
         { label: '1-30 gün geç', amount: 0, color: '#f59e0b' },
@@ -101,8 +102,8 @@ export default function RaporMerkezi() {
           const dueDate = typeof inv.date_lim_reglement === 'number'
             ? inv.date_lim_reglement * 1000
             : new Date(inv.date_lim_reglement).getTime();
-          const daysPastDue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
-          const remain = inv.remain_to_pay || inv.total_ttc || 0;
+          const daysPastDue = Math.floor((currentTimestamp - dueDate) / (1000 * 60 * 60 * 24));
+          const remain = (inv.remain_to_pay || inv.total_ttc || 0) as number;
 
           if (daysPastDue <= 0) aging[0].amount += remain;
           else if (daysPastDue <= 30) aging[1].amount += remain;
@@ -114,22 +115,22 @@ export default function RaporMerkezi() {
       setAgingData(aging);
 
       // Monthly data (last 6 months) - aggregate from invoices
-      const now = new Date();
+      const nowDate = new Date();
       const months: { month: string; gelir: number; gider: number }[] = [];
       for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const d = new Date(nowDate.getFullYear(), nowDate.getMonth() - i, 1);
         const monthStr = d.toLocaleDateString('tr-TR', { month: 'short' });
         const monthStart = d.getTime() / 1000;
         const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime() / 1000;
 
-        const monthInvoices = invoicesData.filter(inv => {
+        const monthInvoices = invoicesData.filter((inv: Invoice) => {
           const invDate = typeof inv.date === 'number' ? inv.date : 0;
           return invDate >= monthStart && invDate < monthEnd;
         });
 
         months.push({
           month: monthStr,
-          gelir: monthInvoices.reduce((sum, inv) => sum + (inv.total_ttc || 0), 0),
+          gelir: monthInvoices.reduce((sum, inv) => sum + ((inv.total_ttc as number) || 0), 0),
           gider: 0, // Would need expense data
         });
       }
@@ -146,15 +147,6 @@ export default function RaporMerkezi() {
   useEffect(() => {
     fetchReportData();
   }, [fetchReportData]);
-
-  const reportTypes = [
-    { id: 'dashboard', label: 'Özet Rapor', icon: Activity, description: 'Genel durum özeti' },
-    { id: 'sales', label: 'Satış Raporu', icon: TrendingUp, description: 'Satış performansı' },
-    { id: 'collection', label: 'Tahsilat Raporu', icon: DollarSign, description: 'Alacak takibi' },
-    { id: 'cashflow', label: 'Nakit Akışı', icon: Activity, description: 'Gelir-gider raporu' },
-    { id: 'vat', label: 'KDV Raporu', icon: Receipt, description: 'KDV beyannamesi' },
-    { id: 'aging', label: 'Yaşlandırma', icon: Calendar, description: 'Vadesi geçen alacaklar' },
-  ];
 
   if (isLoading) {
     return (

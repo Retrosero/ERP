@@ -64,30 +64,30 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/50 transition-opacity"
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
         onClick={closable ? onClose : undefined}
       />
 
       {/* Modal */}
       <div
         className={cn(
-          'relative w-full mx-4 bg-white rounded-xl shadow-2xl animate-slideIn',
+          'relative w-full mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200/60 animate-scale-in',
           sizeClasses[size]
         )}
       >
         {/* Header */}
         {(title || closable) && (
-          <div className="flex items-start justify-between p-6 border-b border-gray-100">
+          <div className="flex items-start justify-between p-5 border-b border-slate-100/60">
             <div>
-              {title && <h2 className="text-lg font-semibold text-gray-900">{title}</h2>}
+              {title && <h2 className="text-lg font-semibold text-slate-900">{title}</h2>}
               {description && (
-                <p className="mt-1 text-sm text-gray-500">{description}</p>
+                <p className="mt-1 text-sm text-slate-500">{description}</p>
               )}
             </div>
             {closable && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -96,11 +96,11 @@ export function Modal({
         )}
 
         {/* Body */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">{children}</div>
+        <div className="p-5 max-h-[60vh] overflow-y-auto">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-3 p-5 border-t border-slate-100/60 bg-slate-50/50">
             {footer}
           </div>
         )}
@@ -157,10 +157,10 @@ export function ConfirmDialog({
       <div className="text-center">
         <div
           className={cn(
-            'mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4',
+            'mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4',
             variant === 'danger' && 'bg-red-100',
             variant === 'warning' && 'bg-amber-100',
-            variant === 'primary' && 'bg-blue-100'
+            variant === 'primary' && 'bg-teal-100'
           )}
         >
           {variant === 'danger' && (
@@ -174,13 +174,13 @@ export function ConfirmDialog({
             </svg>
           )}
           {variant === 'primary' && (
-            <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           )}
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 mb-6">{message}</p>
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">{title}</h3>
+        <p className="text-sm text-slate-500 mb-6">{message}</p>
         <div className="flex items-center justify-center gap-3">
           <Button variant="secondary" onClick={onClose} disabled={loading}>
             {cancelText}

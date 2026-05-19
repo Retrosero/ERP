@@ -91,7 +91,7 @@ export function Table<T extends object>({
 
   if (loading) {
     return (
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200/60">
         <table className="w-full">
           <thead>
             <tr className="table-header">
@@ -126,7 +126,7 @@ export function Table<T extends object>({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <svg
-          className="w-16 h-16 text-gray-300 mb-4"
+          className="w-16 h-16 text-slate-300 mb-4"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -138,13 +138,13 @@ export function Table<T extends object>({
             d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
           />
         </svg>
-        <p className="text-gray-500">{displayEmptyText}</p>
+        <p className="text-slate-500">{displayEmptyText}</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto rounded-2xl border border-slate-200/60">
       <table className="w-full">
         <thead>
           <tr className="table-header">
@@ -157,7 +157,7 @@ export function Table<T extends object>({
                     if (el) el.indeterminate = isSomeSelected;
                   }}
                   onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  className="w-4 h-4 rounded border-slate-300 text-teal-500 focus:ring-teal-500"
                 />
               </th>
             )}
@@ -166,7 +166,7 @@ export function Table<T extends object>({
                 key={column.key}
                 className={cn(
                   'table-cell text-left',
-                  column.sortable && 'cursor-pointer hover:bg-gray-100 select-none',
+                  column.sortable && 'cursor-pointer hover:bg-slate-100 select-none',
                   column.align === 'center' && 'text-center',
                   column.align === 'right' && 'text-right'
                 )}
@@ -176,7 +176,7 @@ export function Table<T extends object>({
                 <div className="flex items-center gap-1">
                   <span>{column.header}</span>
                   {column.sortable && sortColumn === column.key && (
-                    <span className="text-primary">
+                    <span className="text-teal-600">
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
@@ -196,7 +196,7 @@ export function Table<T extends object>({
                 className={cn(
                   'table-row',
                   onRowClick && 'cursor-pointer',
-                  isSelected && 'bg-blue-50/50'
+                  isSelected && 'bg-teal-50/50'
                 )}
                 onClick={() => onRowClick?.(record)}
               >
@@ -206,7 +206,7 @@ export function Table<T extends object>({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSelect(id)}
-                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      className="w-4 h-4 rounded border-slate-300 text-teal-500 focus:ring-teal-500"
                     />
                   </td>
                 )}
@@ -284,29 +284,29 @@ export function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-      <div className="text-sm text-gray-500">
+    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100/60">
+      <div className="text-sm text-slate-500">
         {startItem}–{endItem} / {totalItems}
       </div>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
 
         {getPageNumbers().map((page, index) =>
           typeof page === 'string' ? (
-            <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
+            <span key={`ellipsis-${index}`} className="px-2 text-slate-400">
               {page}
             </span>
           ) : (
@@ -314,10 +314,10 @@ export function Pagination({
               key={page}
               onClick={() => onPageChange(page)}
               className={cn(
-                'min-w-[36px] h-8 rounded-lg text-sm font-medium transition-colors',
+                'min-w-[36px] h-8 rounded-xl text-sm font-medium transition-colors',
                 currentPage === page
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-teal-500 text-white'
+                  : 'text-slate-600 hover:bg-slate-100'
               )}
             >
               {page}
@@ -328,14 +328,14 @@ export function Pagination({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronsRight className="w-4 h-4" />
         </button>
