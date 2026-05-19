@@ -241,7 +241,7 @@ export default function HizliSatis() {
 
         {/* Cart */}
         <div className="space-y-4">
-          <Card className="sticky top-24">
+          <Card>
             <div className="p-4 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-gray-900 flex items-center gap-2">
