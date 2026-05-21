@@ -33,36 +33,36 @@ import { cn } from '@/lib/utils';
 
 const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-  { id: 'musteriler', label: 'Müþteriler', icon: Users, path: '/musteriler' },
-  { id: 'urunler', label: 'Ürünler', icon: Package, path: '/urunler' },
-  { id: 'siparisler', label: 'Satýþ Sipariþleri', icon: ShoppingCart, path: '/siparisler' },
+  { id: 'musteriler', label: 'MÃ¼ÅŸteriler', icon: Users, path: '/musteriler' },
+  { id: 'urunler', label: 'ÃœrÃ¼nler', icon: Package, path: '/urunler' },
+  { id: 'siparisler', label: 'SatÄ±ÅŸ SipariÅŸleri', icon: ShoppingCart, path: '/siparisler' },
   { id: 'teklifler', label: 'Teklifler', icon: FileText, path: '/teklifler' },
   { id: 'faturalar', label: 'Faturalar', icon: Receipt, path: '/faturalar' },
   { id: 'tahsilatlar', label: 'Tahsilat ve Tediye', icon: ArrowLeftRight, path: '/tahsilatlar' },
   { id: 'stok', label: 'Stok Hareketleri', icon: Warehouse, path: '/stok' },
-  { id: 'nakit-yonetimi', label: 'Nakit Yönetimi', icon: Wallet, path: '/nakit-yonetimi' },
-  { id: 'cek-senet', label: 'Çek ve Senet', icon: FileCheck, path: '/cek-senet' },
+  { id: 'nakit-yonetimi', label: 'Nakit YÃ¶netimi', icon: Wallet, path: '/nakit-yonetimi' },
+  { id: 'cek-senet', label: 'Ã‡ek ve Senet', icon: FileCheck, path: '/cek-senet' },
   { id: 'giderler', label: 'Giderler', icon: ReceiptIcon, path: '/giderler' },
   { id: 'rapor-merkezi', label: 'Rapor Merkezi', icon: BarChart3, path: '/rapor-merkezi' },
-  { id: 'yonetim', label: 'Kullanýcý Yönetimi', icon: Shield, path: '/yonetim' },
-  { id: 'sirketler', label: 'Þirketler', icon: Building2, path: '/sirketler' },
+  { id: 'yonetim', label: 'KullanÄ±cÄ± YÃ¶netimi', icon: Shield, path: '/yonetim' },
+  { id: 'sirketler', label: 'Åžirketler', icon: Building2, path: '/sirketler' },
   { id: 'e-fatura', label: 'e-Fatura', icon: Send, path: '/e-fatura' },
-  { id: 'barkod-baski', label: 'Barkod Baský', icon: Printer, path: '/barkod-baski' },
+  { id: 'barkod-baski', label: 'Barkod BaskÄ±', icon: Printer, path: '/barkod-baski' },
   { id: 'depolar', label: 'Depolar', icon: Building, path: '/depolar' },
   { id: 'fiyat-listeleri', label: 'Fiyat Listeleri', icon: Tags, path: '/fiyat-listeleri' },
-  { id: 'kar-marji-analizi', label: 'Kar Marjý Analizi', icon: Percent, path: '/kar-marji-analizi' },
-  { id: 'tekrar-eden-siparisler', label: 'Tekrar Eden Sipariþler', icon: Repeat, path: '/tekrar-eden-siparisler' },
+  { id: 'kar-marji-analizi', label: 'Kar MarjÄ± Analizi', icon: Percent, path: '/kar-marji-analizi' },
+  { id: 'tekrar-eden-siparisler', label: 'Tekrar Eden SipariÅŸler', icon: Repeat, path: '/tekrar-eden-siparisler' },
   { id: 'bildirimler', label: 'Bildirimler', icon: Bell, path: '/bildirimler' },
-  { id: 'termal-baski', label: 'Termal Baský', icon: Printer, path: '/termal-baski' },
+  { id: 'termal-baski', label: 'Termal BaskÄ±', icon: Printer, path: '/termal-baski' },
   { id: 'kargo-takip', label: 'Kargo Takip', icon: Truck, path: '/kargo-takip' },
 ];
 
 const settingsItems = [{ id: 'ayarlar', label: 'Ayarlar', icon: Settings, path: '/ayarlar' }];
 
 const quickActions = [
-  { label: 'Yeni Sipariþ', icon: Plus, path: '/siparisler/yeni', color: 'text-blue-600' },
+  { label: 'Yeni SipariÅŸ', icon: Plus, path: '/siparisler/yeni', color: 'text-blue-600' },
   { label: 'Yeni Teklif', icon: FileText, path: '/teklifler/yeni', color: 'text-green-600' },
-  { label: 'Hýzlý Satýþ', icon: TrendingUp, path: '/hizli-satis', color: 'text-purple-600' },
+  { label: 'HÄ±zlÄ± SatÄ±ÅŸ', icon: TrendingUp, path: '/hizli-satis', color: 'text-purple-600' },
 ];
 
 interface SidebarProps {
@@ -143,7 +143,7 @@ export function Sidebar({ collapsed = false, onCollapsedChange, mobileOpen = fal
 
           {!collapsed && (
             <div className="pt-4 mt-4 border-t border-gray-100">
-              <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Hýzlý Ýþlemler</p>
+              <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">HÄ±zlÄ± Ä°ÅŸlemler</p>
               <div className="space-y-1">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
