@@ -9,7 +9,8 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { orderApi, thirdPartyApi, productApi } from '@/lib/dolibarr';
 import type { Order, ThirdParty, Product } from '@/lib/types/dolibarr';
 
-// Mock order data
+/*
+// Mock order data - for testing only
 const mockOrder = {
   id: 1,
   ref: 'SO-2024-001',
@@ -31,11 +32,12 @@ const mockOrder = {
   createdAt: '2024-01-15',
 };
 
-const orderItems = [
+const mockOrderItems = [
   { id: 1, product: 'Ürün A', quantity: 100, unitPrice: 150, vatRate: 18, total: 17700 },
   { id: 2, product: 'Ürün B', quantity: 40, unitPrice: 150, vatRate: 18, total: 7080 },
   { id: 3, product: 'Nakliye', quantity: 1, unitPrice: 1200, vatRate: 18, total: 1416 },
 ];
+*/
 
 const statusConfig: Record<number, { label: string; variant: 'gray' | 'info' | 'success' | 'warning' | 'danger' }> = {
   0: { label: 'Taslak', variant: 'gray' },
@@ -181,7 +183,7 @@ export default function SiparisDetay() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Kalemler ({orderItems.length})
+            Kalemler ({order.lines?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab('shipping')}

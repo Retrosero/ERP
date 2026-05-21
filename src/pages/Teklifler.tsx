@@ -1,16 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, FileText, Eye, MoreVertical, Send, CheckCircle } from 'lucide-react';
-import { Card, CardHeader, CardTitle, Button, Input, Select, Badge, Table, Pagination } from '@/components/ui';
+import { Plus, Search, FileText, Eye, MoreVertical, Send, CheckCircle, Loader2 } from 'lucide-react';
+import { MainLayout } from '@/components/layout';
+import { Card, CardHeader, CardTitle, Button, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { proposalApi } from '@/lib/dolibarr';
+import type { Proposal } from '@/lib/types/dolibarr';
 
-// Mock data for proposals
-const mockProposals = [
+/*
+// Mock data for proposals - for testing only
+const mockProposals: Proposal[] = [
   {
     id: 1,
     ref: 'PRP-2024-001',
     date: '2024-01-15',
-    validUntil: '2024-01-30',
+    date_lim_parcours: '2024-01-30',
     customer: 'ABC Ticaret A.Ş.',
     customerId: 1,
     items: 8,
@@ -21,47 +25,15 @@ const mockProposals = [
     id: 2,
     ref: 'PRP-2024-002',
     date: '2024-01-14',
-    validUntil: '2024-01-29',
+    date_lim_parcours: '2024-01-29',
     customer: 'XYZ Holding',
     customerId: 2,
     items: 5,
     total: 125000,
     status: 2,
   },
-  {
-    id: 3,
-    ref: 'PRP-2024-003',
-    date: '2024-01-13',
-    validUntil: '2024-01-28',
-    customer: 'DEF Lojistik',
-    customerId: 3,
-    items: 3,
-    total: 18000,
-    status: 0,
-  },
-  {
-    id: 4,
-    ref: 'PRP-2024-004',
-    date: '2024-01-10',
-    validUntil: '2024-01-25',
-    customer: 'GHI Market',
-    customerId: 4,
-    items: 6,
-    total: 28000,
-    status: 4,
-  },
-  {
-    id: 5,
-    ref: 'PRP-2024-005',
-    date: '2024-01-08',
-    validUntil: '2024-01-23',
-    customer: 'JKL Teknoloji',
-    customerId: 5,
-    items: 4,
-    total: 89000,
-    status: 5,
-  },
 ];
+*/
 
 const statusOptions = [
   { value: '', label: 'Tüm Durumlar' },
@@ -72,7 +44,7 @@ const statusOptions = [
   { value: '5', label: 'Kaybedildi' },
 ];
 
-const getStatusBadge = (status: number) => {
+const getStatusBadge = (status: number | undefined) => {
   switch (status) {
     case 0:
       return <Badge variant="gray">Taslak</Badge>;
@@ -92,17 +64,43 @@ const getStatusBadge = (status: number) => {
 };
 
 export function Teklifler() {
+  const [proposals, setProposals] = useState<Proposal[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const itemsPerPage = 10;
 
-  const filteredProposals = mockProposals.filter((proposal) => {
+  // Fetch proposals from Dolibarr
+  const fetchProposals = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params: Record<string, unknown> = { limit: 100, sortfield: 'date', sortorder: 'DESC' };
+      if (statusFilter) {
+        params.status = parseInt(statusFilter);
+      }
+      const data = await proposalApi.list(params as Parameters<typeof proposalApi.list>[0]);
+      setProposals(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Teklifler yüklenirken hata oluştu');
+      console.error('Proposals fetch error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchProposals();
+  }, [fetchProposals]);
+
+  const filteredProposals = proposals.filter((proposal) => {
     const matchesSearch =
-      proposal.ref.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      proposal.customer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = !statusFilter || proposal.status === parseInt(statusFilter);
+      proposal.ref?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      proposal.socname?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = !statusFilter || proposal.fk_statut === parseInt(statusFilter);
     return matchesSearch && matchesStatus;
   });
 
@@ -126,36 +124,36 @@ export function Teklifler() {
     {
       key: 'date',
       header: 'Tarih',
-      render: (value: unknown) => formatDate(value as string),
+      render: (value: unknown) => value ? formatDate(value as string) : '-',
     },
     {
-      key: 'customer',
+      key: 'socname',
       header: 'Müşteri',
       sortable: true,
       render: (value: unknown, record: unknown) => {
-        const proposal = record as typeof mockProposals[0];
+        const proposal = record as Proposal;
         return (
-          <Link to={`/musteriler/${proposal.customerId}`} className="hover:text-primary">
-            {value as string}
+          <Link to={`/musteriler/${proposal.fk_soc}`} className="hover:text-primary">
+            {value as string || '-'}
           </Link>
         );
       },
     },
     {
-      key: 'validUntil',
+      key: 'fin_validite',
       header: 'Geçerlilik',
       render: (value: unknown) => {
-        const date = new Date(value as string);
-        const isExpired = date < new Date();
+        const date = value ? new Date(value as string) : null;
+        const isExpired = date && date < new Date();
         return (
           <span className={isExpired ? 'text-red-600' : 'text-gray-600'}>
-            {formatDate(value as string)}
+            {value ? formatDate(value as string) : '-'}
           </span>
         );
       },
     },
     {
-      key: 'total',
+      key: 'total_ttc',
       header: 'Tutar',
       align: 'right' as const,
       render: (value: unknown) => (
@@ -163,16 +161,16 @@ export function Teklifler() {
       ),
     },
     {
-      key: 'status',
+      key: 'fk_statut',
       header: 'Durum',
-      render: (value: unknown) => getStatusBadge(value as number),
+      render: (value: unknown) => getStatusBadge(value as number | undefined),
     },
     {
       key: 'actions',
       header: '',
       width: '100px',
       render: (_: unknown, record: unknown) => {
-        const proposal = record as typeof mockProposals[0];
+        const proposal = record as Proposal;
         return (
           <div className="flex items-center gap-1">
             <Link
@@ -192,59 +190,91 @@ export function Teklifler() {
   ];
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Teklifler</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {filteredProposals.length} teklif bulundu
-          </p>
+    <MainLayout>
+      <div className="space-y-6 animate-fadeIn">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Teklifler</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {filteredProposals.length} teklif bulundu
+            </p>
+          </div>
+          <Link to="/teklifler/yeni">
+            <Button icon={<Plus className="w-4 h-4" />}>
+              Yeni Teklif
+            </Button>
+          </Link>
         </div>
-        <Link to="/teklifler/yeni">
-          <Button icon={<Plus className="w-4 h-4" />}>
-            Yeni Teklif
-          </Button>
-        </Link>
-      </div>
 
-      {/* Filters */}
-      <Card padding="sm">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Teklif no veya müşteri ile ara..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+        {/* Error Message */}
+        {error && (
+          <Alert type="error" title="Hata">
+            {error}
+            <p className="text-sm mt-1">Lütfen Dolibarr bağlantınızı kontrol edin.</p>
+          </Alert>
+        )}
+
+        {/* Filters */}
+        <Card padding="sm">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Teklif no veya müşteri ile ara..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select
+              options={statusOptions}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              className="w-full md:w-44"
             />
           </div>
-          <Select
-            options={statusOptions}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            className="w-full md:w-44"
-          />
-        </div>
-      </Card>
+        </Card>
 
-      {/* Table */}
-      <Card padding="none">
-        <Table
-          columns={columns}
-          data={paginatedProposals as unknown as Record<string, unknown>[]}
-          selectedIds={selectedIds}
-          onSelectChange={setSelectedIds}
-        />
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredProposals.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-        />
-      </Card>
-    </div>
+        {/* Loading or Table */}
+        {isLoading ? (
+          <Card>
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+              <p className="text-gray-500">Teklifler yükleniyor...</p>
+            </div>
+          </Card>
+        ) : filteredProposals.length === 0 ? (
+          <Card>
+            <div className="flex flex-col items-center justify-center py-12">
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">
+                {searchQuery ? 'Arama sonucu bulunamadı' : 'Teklif bulunamadı'}
+              </p>
+              <p className="text-sm text-gray-400 mt-2">
+                Dolibarr'da teklif oluşturmak için yeni teklif butonuna tıklayın.
+              </p>
+            </div>
+          </Card>
+        ) : (
+          <Card padding="none">
+            <Table
+              columns={columns}
+              data={filteredProposals as unknown as Record<string, unknown>[]}
+              selectedIds={selectedIds}
+              onSelectChange={setSelectedIds}
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredProposals.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </Card>
+        )}
+      </div>
+    </MainLayout>
   );
 }
 

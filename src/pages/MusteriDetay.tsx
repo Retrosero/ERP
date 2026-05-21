@@ -9,7 +9,8 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { thirdPartyApi, orderApi, invoiceApi } from '@/lib/dolibarr';
 import type { ThirdParty, Order, Invoice } from '@/lib/types/dolibarr';
 
-// Mock customer data
+/*
+// Mock customer data - for testing only
 const mockCustomer = {
   id: 1,
   type: 'company',
@@ -30,16 +31,17 @@ const mockCustomer = {
   createdAt: '2023-06-10',
 };
 
-const recentInvoices = [
+const mockRecentInvoices = [
   { id: 1, number: 'FTR-2024-0012', date: '2024-01-10', amount: 8500, status: 'pending' },
   { id: 2, number: 'FTR-2024-0010', date: '2024-01-05', amount: 4200, status: 'paid' },
   { id: 3, number: 'FTR-2023-0089', date: '2023-12-28', amount: 6800, status: 'paid' },
 ];
 
-const recentOrders = [
+const mockRecentOrders = [
   { id: 1, number: 'ORD-2024-0023', date: '2024-01-15', amount: 3500, status: 'delivered' },
   { id: 2, number: 'ORD-2024-0020', date: '2024-01-12', amount: 2100, status: 'processing' },
 ];
+*/
 
 export default function MusteriDetay() {
   const { id } = useParams();
