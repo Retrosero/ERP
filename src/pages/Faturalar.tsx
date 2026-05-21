@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Receipt, Eye, Download, MoreVertical, Loader2, Wallet } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, CardHeader, CardTitle, Button, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { invoiceApi } from '@/lib/dolibarr';
@@ -165,7 +164,7 @@ export function Faturalar() {
   ];
 
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6 animate-fadeIn">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -254,7 +253,7 @@ export function Faturalar() {
           </Card>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }
 

@@ -33,35 +33,131 @@ import {
   ChevronDown,
   LogOut,
   HelpCircle,
-  X
+  X,
+  ScanBarcode,
+  UsersRound,
+  Calendar,
+  CalendarDays,
+  WalletCards,
+  UserSearch,
+  Briefcase,
+  TrendingUp,
+  Webhook,
+  Server,
+  Clock,
+  Fingerprint,
+  CalendarCheck,
+  DollarSign,
+  Calculator,
+  HardHat,
 } from 'lucide-react';
 import { cn, getInitials } from '@/lib/utils';
 
-// Navigation items - grouped by category
-const navigationItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-  { id: 'musteriler', label: 'Müşteriler', icon: Users, path: '/musteriler' },
-  { id: 'urunler', label: 'Ürünler', icon: Package, path: '/urunler' },
-  { id: 'siparisler', label: 'Siparişler', icon: ShoppingCart, path: '/siparisler' },
-  { id: 'teklifler', label: 'Teklifler', icon: FileText, path: '/teklifler' },
-  { id: 'faturalar', label: 'Faturalar', icon: Receipt, path: '/faturalar' },
-  { id: 'tahsilatlar', label: 'Tahsilat ve Tediye', icon: ArrowLeftRight, path: '/tahsilatlar' },
-  { id: 'stok', label: 'Stok Hareketleri', icon: Warehouse, path: '/stok' },
-  { id: 'nakit-yonetimi', label: 'Nakit Yönetimi', icon: Wallet, path: '/nakit-yonetimi' },
-  { id: 'cek-senet', label: 'Çek ve Senet', icon: FileCheck, path: '/cek-senet' },
-  { id: 'giderler', label: 'Giderler', icon: ReceiptIcon, path: '/giderler' },
-  { id: 'rapor-merkezi', label: 'Rapor Merkezi', icon: BarChart3, path: '/rapor-merkezi' },
-  { id: 'yonetim', label: 'Kullanıcı Yönetimi', icon: Shield, path: '/yonetim' },
-  { id: 'sirketler', label: 'Şirketler', icon: Building2, path: '/sirketler' },
-  { id: 'e-fatura', label: 'e-Fatura', icon: Send, path: '/e-fatura' },
-  { id: 'barkod-baski', label: 'Barkod Baskı', icon: Printer, path: '/barkod-baski' },
-  { id: 'depolar', label: 'Depolar', icon: Building, path: '/depolar' },
-  { id: 'fiyat-listeleri', label: 'Fiyat Listeleri', icon: Tags, path: '/fiyat-listeleri' },
-  { id: 'kar-marji-analizi', label: 'Kar Marjı Analizi', icon: Percent, path: '/kar-marji-analizi' },
-  { id: 'tekrar-eden-siparisler', label: 'Tekrar Eden Siparişler', icon: Repeat, path: '/tekrar-eden-siparisler' },
-  { id: 'bildirimler', label: 'Bildirimler', icon: Bell, path: '/bildirimler' },
-  { id: 'termal-baski', label: 'Termal Baskı', icon: Printer, path: '/termal-baski' },
-  { id: 'kargo-takip', label: 'Kargo Takip', icon: Truck, path: '/kargo-takip' },
+// Navigation items - grouped by category with sections
+const navigationGroups = [
+  {
+    title: 'Ana Sayfa',
+    items: [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    ],
+  },
+  {
+    title: 'CRM & Satış',
+    items: [
+      { id: 'musteriler', label: 'Müşteriler', icon: Users, path: '/musteriler' },
+      { id: 'urunler', label: 'Ürünler', icon: Package, path: '/urunler' },
+      { id: 'siparisler', label: 'Siparişler', icon: ShoppingCart, path: '/siparisler' },
+      { id: 'teklifler', label: 'Teklifler', icon: FileText, path: '/teklifler' },
+      { id: 'faturalar', label: 'Faturalar', icon: Receipt, path: '/faturalar' },
+      { id: 'tahsilatlar', label: 'Tahsilat ve Tediye', icon: ArrowLeftRight, path: '/tahsilatlar' },
+    ],
+  },
+  {
+    title: 'Stok & Depo',
+    items: [
+      { id: 'stok', label: 'Stok Hareketleri', icon: Warehouse, path: '/stok' },
+      { id: 'depolar', label: 'Depolar', icon: Building, path: '/depolar' },
+      { id: 'barkod-tarama', label: 'Barkod Tarama', icon: ScanBarcode, path: '/barkod-tarama' },
+      { id: 'barkod-baski', label: 'Barkod Baskı', icon: Printer, path: '/barkod-baski' },
+    ],
+  },
+  {
+    title: 'İnsan Kaynakları',
+    items: [
+      { id: 'personel', label: 'Personel Listesi', icon: UsersRound, path: '/personel' },
+      { id: 'personel-giris-cikis', label: 'Giriş-Çıkış Takibi', icon: Clock, path: '/personel-giris-cikis' },
+      { id: 'izin-talepleri', label: 'İzin Talepleri', icon: Calendar, path: '/izin-talepleri' },
+      { id: 'izin-bakiyesi', label: 'İzin Bakiyesi', icon: CalendarDays, path: '/izin-bakiyesi' },
+      { id: 'harcama-raporlari', label: 'Harcama Raporları', icon: WalletCards, path: '/harcama-raporlari' },
+    ],
+  },
+  {
+    title: 'Maaş ve Bordro',
+    items: [
+      { id: 'bordro', label: 'Bordro Listesi', icon: Calculator, path: '/bordro' },
+      { id: 'mesai-talepleri', label: 'Fazla Mesai', icon: DollarSign, path: '/mesai-talepleri' },
+      { id: 'avans-yonetimi', label: 'Avans Yönetimi', icon: Wallet, path: '/avans-yonetimi' },
+      { id: 'zimmet-yonetimi', label: 'Zimmet Yönetimi', icon: HardHat, path: '/zimmet-yonetimi' },
+    ],
+  },
+  {
+    title: 'İşe Alım',
+    items: [
+      { id: 'ise-alim', label: 'İş İlanları', icon: Briefcase, path: '/ise-alim' },
+      { id: 'adaylar', label: 'Adaylar', icon: UserSearch, path: '/ise-alim/adaylar' },
+    ],
+  },
+  {
+    title: 'Finans & Muhasebe',
+    items: [
+      { id: 'nakit-yonetimi', label: 'Nakit Yönetimi', icon: Wallet, path: '/nakit-yonetimi' },
+      { id: 'cek-senet', label: 'Çek ve Senet', icon: FileCheck, path: '/cek-senet' },
+      { id: 'giderler', label: 'Giderler', icon: ReceiptIcon, path: '/giderler' },
+      { id: 'fiyat-listeleri', label: 'Fiyat Listeleri', icon: Tags, path: '/fiyat-listeleri' },
+      { id: 'kar-marji-analizi', label: 'Kar Marjı Analizi', icon: Percent, path: '/kar-marji-analizi' },
+    ],
+  },
+  {
+    title: 'Operasyon',
+    items: [
+      { id: 'projeler', label: 'Proje Yönetimi', icon: Briefcase, path: '/projeler' },
+      { id: 'tekrar-eden-siparisler', label: 'Tekrar Eden Siparişler', icon: Repeat, path: '/tekrar-eden-siparisler' },
+      { id: 'kargo-takip', label: 'Kargo Takip', icon: Truck, path: '/kargo-takip' },
+      { id: 'termal-baski', label: 'Termal Baskı', icon: Printer, path: '/termal-baski' },
+    ],
+  },
+  {
+    title: 'Takvim & Bildirimler',
+    items: [
+      { id: 'takvim', label: 'Takvim', icon: Calendar, path: '/takvim' },
+      { id: 'hatirlaticilar', label: 'Hatırlatıcılar', icon: Bell, path: '/hatirlaticilar' },
+      { id: 'bildirimler', label: 'Bildirimler', icon: BellIcon, path: '/bildirimler' },
+    ],
+  },
+  {
+    title: 'Raporlama & Analitik',
+    items: [
+      { id: 'rapor-merkezi', label: 'Rapor Merkezi', icon: BarChart3, path: '/rapor-merkezi' },
+      { id: 'satis-analitik', label: 'Satış Analitik', icon: TrendingUp, path: '/satis-analitik' },
+      { id: 'ik-analitik', label: 'İK Analitik', icon: UsersRound, path: '/ik-analitik' },
+    ],
+  },
+  {
+    title: 'Entegrasyonlar',
+    items: [
+      { id: 'webhooks', label: 'Webhooks', icon: Webhook, path: '/webhooks' },
+      { id: 'api-gateway', label: 'API Gateway', icon: Server, path: '/api-gateway' },
+      { id: 'e-fatura', label: 'e-Fatura', icon: Send, path: '/e-fatura' },
+    ],
+  },
+  {
+    title: 'Yönetim',
+    items: [
+      { id: 'yonetim', label: 'Kullanıcı Yönetimi', icon: Shield, path: '/yonetim' },
+      { id: 'sirketler', label: 'Şirketler', icon: Building2, path: '/sirketler' },
+      { id: 'ayarlar', label: 'Ayarlar', icon: Settings, path: '/ayarlar' },
+    ],
+  },
 ];
 
 const currentUser = {
@@ -83,8 +179,8 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -166,30 +262,6 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <span className="text-teal-600 font-semibold text-sm">Panel</span>
               </div>
             </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1 ml-8">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.path);
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.path}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150',
-                      'cursor-pointer',
-                      active
-                        ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm shadow-teal-500/20'
-                        : 'text-slate-600 hover:bg-slate-100',
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
           </div>
 
           {/* Right side */}
@@ -232,13 +304,6 @@ export function MainLayout({ children }: MainLayoutProps) {
               )}
             </div>
 
-            {/* Collapse button - Desktop */}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex p-2 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all cursor-pointer"
-            >
-              {sidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-            </button>
 
             {/* Notifications */}
             <div className="relative" ref={notificationRef}>
@@ -357,42 +422,132 @@ export function MainLayout({ children }: MainLayoutProps) {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
       )}
 
-      {/* Mobile Navigation Menu */}
+      {/* Mobile Navigation Menu - Grouped by Category */}
       <div className={cn(
         'fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white border-r border-slate-200/60 z-50 transition-all duration-300 ease-out overflow-y-auto',
-        'lg:hidden w-72',
+        'lg:hidden w-80',
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         <nav className="p-4">
-          <div className="space-y-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
+          {navigationGroups.map((group, groupIndex) => (
+            <div key={group.title} className="mb-6">
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">
+                {group.title}
+              </h3>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.path);
 
-              return (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150',
-                    'cursor-pointer',
-                    active
-                      ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm shadow-teal-500/20'
-                      : 'text-slate-600 hover:bg-slate-100',
-                  )}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
+                        'cursor-pointer',
+                        active
+                          ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm shadow-teal-500/20'
+                          : 'text-slate-600 hover:bg-slate-100',
+                      )}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
       </div>
 
-      {/* Main Content Area - Full Width */}
-      <main className="min-h-[calc(100vh-4rem)]">
+      {/* Desktop Sidebar - Full Grouped Navigation */}
+      <div className={cn(
+        'hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white border-r border-slate-200/60 z-40 transition-all duration-300 ease-out overflow-visible',
+        desktopSidebarOpen ? 'w-80' : 'w-16'
+      )}>
+        <button
+          type="button"
+          onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
+          className="absolute -right-4 top-4 z-50 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-teal-600 cursor-pointer"
+          aria-label={desktopSidebarOpen ? 'Sol menuyu daralt' : 'Sol menuyu ac'}
+          title={desktopSidebarOpen ? 'Sol menuyu daralt' : 'Sol menuyu ac'}
+        >
+          {desktopSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </button>
+
+        <div className="h-full overflow-y-auto p-4">
+          {desktopSidebarOpen ? (
+            // Expanded Sidebar - Full grouped navigation
+            <div className="space-y-6">
+              {navigationGroups.map((group) => (
+                <div key={group.title}>
+                  <h3 className="text-xs font-semibold text-teal-600 uppercase tracking-wider mb-2 px-2">
+                    {group.title}
+                  </h3>
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const active = isActive(item.path);
+                      return (
+                        <Link
+                          key={item.id}
+                          to={item.path}
+                          className={cn(
+                            'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
+                            'cursor-pointer',
+                            active
+                              ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm shadow-teal-500/20'
+                              : 'text-slate-600 hover:bg-slate-100',
+                          )}
+                        >
+                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Collapsed Sidebar - Icons only
+            <div className="flex flex-col items-center pt-4">
+              {navigationGroups.map((group) => (
+                <div key={group.title} className="mb-4 w-full flex flex-col items-center">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.path);
+                    return (
+                      <Link
+                        key={item.id}
+                        to={item.path}
+                        className={cn(
+                          'flex items-center justify-center w-12 h-12 rounded-xl mb-1 transition-all duration-150 cursor-pointer',
+                          active
+                            ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm shadow-teal-500/20'
+                            : 'text-slate-500 hover:bg-slate-100',
+                        )}
+                        title={item.label}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <main className={cn(
+        'min-h-[calc(100vh-4rem)] transition-all duration-300',
+        desktopSidebarOpen ? 'lg:ml-80' : 'lg:ml-16'
+      )}>
         <div className="p-4 sm:p-6 lg:p-8">
           {children || <Outlet />}
         </div>

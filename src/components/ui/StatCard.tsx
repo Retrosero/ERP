@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { createElement, isValidElement } from 'react';
 
 interface StatCardProps {
   icon: LucideIcon | React.ReactNode;
@@ -35,10 +36,15 @@ export function StatCard({
 
   // Handle icon rendering - support both component and React element
   const renderIcon = () => {
-    if (typeof icon === 'function') {
-      const IconComponent = icon as LucideIcon;
-      return <IconComponent className="w-5 h-5" />;
+    if (isValidElement(icon)) {
+      return icon;
     }
+
+    if (typeof icon === 'function' || typeof icon === 'object') {
+      const IconComponent = icon as LucideIcon;
+      return createElement(IconComponent, { className: 'w-5 h-5' });
+    }
+
     return icon;
   };
 

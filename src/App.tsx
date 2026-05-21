@@ -41,6 +41,42 @@ import {
   Bildirimler,
   TermalBaski,
   KargoTakip,
+  BarkodTarama,
+  // İnsan Kaynakları
+  PersonelListesi,
+  PersonelDetay,
+  YeniPersonel,
+  PersonelGirisCikis,
+  IzinTalepleri,
+  YeniIzinTalebi,
+  IzinDetay,
+  IsIlanlari,
+  YeniIsIlani,
+  IlanDetay,
+  AdayListesi,
+  AdayDetay,
+  HarcamaRaporlari,
+  HarcamaDetay,
+  IzinBakiyesi,
+  Projeler,
+  ProjeDetay,
+  // Faz 8: Dashboard ve Raporlama
+  PerformansDashboard,
+  SatisAnalitik,
+  IKAnalitik,
+  // Faz 9: Takvim ve Randevular
+  EtkinlikTakvimi,
+  Hatirlaticilar,
+  // Faz 10: Entegrasyonlar ve Otomasyon
+  Webhooks,
+  APIGateway,
+  // Super Admin
+  SuperAdminPanel,
+  // Faz 11: Maaş ve Bordro (YENİ)
+  BordroListesi,
+  MesaiTalepleri,
+  AvansYonetimi,
+  ZimmetYonetimi,
 } from '@/pages';
 
 function App() {
@@ -80,6 +116,43 @@ function App() {
             <Route path="stok/yeni" element={<Stok />} />
             <Route path="ayarlar" element={<Ayarlar />} />
             <Route path="hizli-satis" element={<HizliSatis />} />
+            {/* Barkod Tarama */}
+            <Route path="barkod-tarama" element={<BarkodTarama />} />
+            {/* İnsan Kaynakları */}
+            <Route path="personel" element={<PersonelListesi />} />
+            <Route path="personel/yeni" element={<YeniPersonel />} />
+            <Route path="personel/:id" element={<PersonelDetay />} />
+            <Route path="personel/:id/duzenle" element={<YeniPersonel />} />
+            <Route path="personel-giris-cikis" element={<PersonelGirisCikis />} />
+            <Route path="izin-talepleri" element={<IzinTalepleri />} />
+            <Route path="izin-talepleri/yeni" element={<YeniIzinTalebi />} />
+            <Route path="izin-talepleri/:id" element={<IzinDetay />} />
+            <Route path="harcama-raporlari" element={<HarcamaRaporlari />} />
+            <Route path="harcama-raporlari/yeni" element={<HarcamaDetay />} />
+            <Route path="harcama-raporlari/:id" element={<HarcamaDetay />} />
+            <Route path="izin-bakiyesi" element={<IzinBakiyesi />} />
+            {/* İşe Alım */}
+            <Route path="ise-alim" element={<IsIlanlari />} />
+            <Route path="ise-alim/ilan/yeni" element={<YeniIsIlani />} />
+            <Route path="ise-alim/ilan/:id" element={<IlanDetay />} />
+            <Route path="ise-alim/ilan/:id/duzenle" element={<YeniIsIlani />} />
+            <Route path="ise-alim/adaylar" element={<AdayListesi />} />
+            <Route path="ise-alim/aday/yeni" element={<AdayDetay />} />
+            <Route path="ise-alim/aday/:id" element={<AdayDetay />} />
+            {/* Faz 7: Proje Yönetimi */}
+            <Route path="projeler" element={<Projeler />} />
+            <Route path="projeler/yeni" element={<ProjeDetay />} />
+            <Route path="projeler/:id" element={<ProjeDetay />} />
+            {/* Faz 8: Dashboard ve Raporlama */}
+            <Route path="dashboard" element={<PerformansDashboard />} />
+            <Route path="satis-analitik" element={<SatisAnalitik />} />
+            <Route path="ik-analitik" element={<IKAnalitik />} />
+            {/* Faz 9: Takvim ve Randevular */}
+            <Route path="takvim" element={<EtkinlikTakvimi />} />
+            <Route path="hatirlaticilar" element={<Hatirlaticilar />} />
+            {/* Faz 10: Entegrasyonlar ve Otomasyon */}
+            <Route path="webhooks" element={<Webhooks />} />
+            <Route path="api-gateway" element={<APIGateway />} />
             {/* Yeni Modüller */}
             <Route path="nakit-yonetimi" element={<NakitYonetimi />} />
             <Route path="cek-senet" element={<CekSenet />} />
@@ -96,7 +169,14 @@ function App() {
             <Route path="bildirimler" element={<Bildirimler />} />
             <Route path="termal-baski" element={<TermalBaski />} />
             <Route path="kargo-takip" element={<KargoTakip />} />
+            {/* Faz 11: Maaş ve Bordro */}
+            <Route path="bordro" element={<BordroListesi />} />
+            <Route path="mesai-talepleri" element={<MesaiTalepleri />} />
+            <Route path="avans-yonetimi" element={<AvansYonetimi />} />
+            <Route path="zimmet-yonetimi" element={<ZimmetYonetimi />} />
           </Route>
+          {/* Super Admin Routes */}
+          <Route path="super-admin" element={<SuperAdminPanel />} />
         </Routes>
       </ApiProvider>
     </BrowserRouter>

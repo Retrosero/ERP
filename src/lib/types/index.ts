@@ -174,3 +174,6 @@ export const STOCK_MOVEMENT_TYPE = {
   EXIT: { value: 1, label: 'Çıkış' },
   TRANSFER: { value: 2, label: 'Transfer' },
 } as const;
+
+// HRM Types (re-export from hrm.ts)
+export * from './hrm';

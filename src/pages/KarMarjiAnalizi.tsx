@@ -3,7 +3,6 @@ import {
   TrendingUp, TrendingDown, DollarSign, Package, AlertTriangle,
   Search, Filter, Download, Loader2, BarChart3, PieChart, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import {
   Card, CardHeader, CardTitle, Button, Input, Select,
   Badge, Table, Alert, Modal
@@ -146,17 +145,17 @@ export default function KarMarjiAnalizi() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
           <p className="text-gray-500">Kar marjı analizi yükleniyor...</p>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Kar Marjı Analizi</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -383,6 +382,6 @@ export default function KarMarjiAnalizi() {
           </div>
         </Modal>
       )}
-    </MainLayout>
+    </>
   );
 }

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Package, AlertTriangle, Loader2, Package2, Tag, TrendingUp, ChevronRight } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
-import { Card, CardHeader, CardTitle, Button, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
+import { Search, Package, AlertTriangle, Loader2, Package2, Tag, TrendingUp, ChevronRight } from 'lucide-react';
+import { Card, CardHeader, CardTitle, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
 import { formatCurrency, formatNumber, cn } from '@/lib/utils';
 import { productApi } from '@/lib/dolibarr';
 import type { Product } from '@/lib/types/dolibarr';
@@ -165,25 +164,8 @@ export function Urunler() {
   const outOfStockProducts = products.filter(p => !p.stock_reel || p.stock_reel <= 0).length;
 
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6 animate-fadeIn">
-        {/* Page Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Ürünler</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              {filteredProducts.length} ürün bulundu
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/urunler/yeni">
-              <Button variant="primary" icon={<Plus className="w-4 h-4" />}>
-                Yeni Ürün
-              </Button>
-            </Link>
-          </div>
-        </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-br from-teal-500 to-teal-600 border-0">
@@ -302,7 +284,7 @@ export function Urunler() {
           </Card>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }
 

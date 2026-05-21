@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, User, Receipt, Loader2 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Alert } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { paymentApi, thirdPartyApi, invoiceApi } from '@/lib/dolibarr';
@@ -123,17 +122,17 @@ export default function YeniTahsilat() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
           <p className="text-gray-500">Müşteri ve faturalar yükleniyor...</p>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="max-w-3xl mx-auto animate-fadeIn">
         {/* Header */}
         <div className="mb-6">
@@ -308,6 +307,6 @@ export default function YeniTahsilat() {
           </div>
         </form>
       </div>
-    </MainLayout>
+    </>
   );
 }

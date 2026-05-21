@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Phone, Mail, Building, Loader2, Users, TrendingUp, Filter, ChevronRight } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
-import { Card, CardHeader, CardTitle, Button, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
+import { Search, Phone, Mail, Building, Loader2, Users, TrendingUp, Filter, ChevronRight } from 'lucide-react';
+import { Card, CardHeader, CardTitle, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
 import { formatCurrency, formatPhone, cn } from '@/lib/utils';
 import { thirdPartyApi } from '@/lib/dolibarr';
 import type { ThirdParty } from '@/lib/types/dolibarr';
@@ -135,25 +134,8 @@ export function Musteriler() {
   const suppliers = customers.filter(c => c.client === 2).length;
 
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6 animate-fadeIn">
-        {/* Page Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Müşteriler</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              {filteredCustomers.length} müşteri bulundu
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/musteriler/yeni">
-              <Button variant="primary" icon={<Plus className="w-4 h-4" />}>
-                Yeni Müşteri
-              </Button>
-            </Link>
-          </div>
-        </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-gradient-to-br from-teal-500 to-teal-600 border-0">
@@ -261,7 +243,7 @@ export function Musteriler() {
           </Card>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }
 

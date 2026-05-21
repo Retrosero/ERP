@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'primary' | 'gray' | 'blue';
+type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'primary' | 'gray' | 'blue' | 'default';
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -17,6 +17,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   primary: 'bg-teal-100 text-teal-700',
   gray: 'bg-slate-100 text-slate-700',
   blue: 'bg-blue-100 text-blue-700',
+  default: 'bg-slate-100 text-slate-700',
 };
 
 export function Badge({ children, variant = 'neutral', className }: BadgeProps) {

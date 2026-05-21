@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, User, Mail, Phone, MapPin, Building2, Loader2 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Alert } from '@/components/ui';
 import { thirdPartyApi } from '@/lib/dolibarr';
 import type { CreateThirdPartyDto } from '@/lib/types/dolibarr';
@@ -82,7 +81,7 @@ export default function YeniMusteri() {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="max-w-3xl mx-auto animate-fadeIn">
         {/* Header */}
         <div className="mb-6">
@@ -381,6 +380,6 @@ export default function YeniMusteri() {
           </div>
         </form>
       </div>
-    </MainLayout>
+    </>
   );
 }

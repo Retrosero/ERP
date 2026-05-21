@@ -19,7 +19,7 @@ export interface ApiConfig {
 interface ApiContextType {
   config: ApiConfig;
   updateConfig: (config: Partial<ApiConfig>) => void;
-  testConnection: () => Promise<boolean>;
+  testConnection: (overrides?: Partial<ApiConfig>) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -42,6 +42,16 @@ const defaultConfig: ApiConfig = {
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'dolibarr_panel_config';
+const normalizeApiKey = (value?: string): string =>
+  (value || '')
+    .replace(/^Bearer\s+/i, '')
+    .replace(/\s+/g, '')
+    .trim();
+
+const appendDolibarrApiKey = (url: string, apiKey: string): string => {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}DOLAPIKEY=${encodeURIComponent(apiKey)}`;
+};
 
 export function ApiProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<ApiConfig>(() => {
@@ -83,24 +93,51 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     setConfig((prev) => ({ ...prev, ...updates }));
   };
 
-  const testConnection = async (): Promise<boolean> => {
+  const testConnection = async (overrides?: Partial<ApiConfig>): Promise<boolean> => {
     setIsLoading(true);
     try {
+      const effectiveConfig: ApiConfig = { ...config, ...overrides };
+      const sessionApiKey = normalizeApiKey(sessionStorage.getItem('dolibarr_api_key') || '');
+      const effectiveApiKey = normalizeApiKey(effectiveConfig.apiKey || sessionApiKey);
+
       let url: string;
       let headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
 
-      if (config.useProxy && config.proxyUrl) {
+      if (effectiveConfig.useProxy && effectiveConfig.proxyUrl) {
         // Proxy mode: test proxy connection
-        url = `${config.proxyUrl}/health`;
+        url = `${effectiveConfig.proxyUrl}/health`;
       } else {
         // Direct mode: test Dolibarr connection
-        if (!config.baseUrl || !config.apiKey) {
+        if (!effectiveConfig.baseUrl || !effectiveApiKey) {
           return false;
         }
-        url = `${config.baseUrl}${config.apiPrefix}/status`;
-        headers['DOLAPIKEY'] = config.apiKey;
+        const base = `${effectiveConfig.baseUrl}${effectiveConfig.apiPrefix}`;
+        const testEndpoints = [`${base}/status`, `${base}/users/info`];
+
+        let success = false;
+        for (const endpointUrl of testEndpoints) {
+          const response = await fetch(appendDolibarrApiKey(endpointUrl, effectiveApiKey), {
+            method: 'GET',
+            headers,
+            signal: AbortSignal.timeout(10000),
+          });
+          if (response.ok) {
+            success = true;
+            break;
+          }
+          if (response.status === 401) {
+            continue;
+          }
+        }
+
+        setConfig((prev) => ({
+          ...prev,
+          isConnected: success,
+          lastTested: new Date().toISOString(),
+        }));
+        return success;
       }
 
       const response = await fetch(url, {
@@ -160,7 +197,7 @@ export function getDolibarrConfig(): Omit<ApiConfig, 'isConnected' | 'lastTested
     if (stored) {
       const parsed = JSON.parse(stored);
       // Get API key from sessionStorage
-      const apiKey = sessionStorage.getItem('dolibarr_api_key') || '';
+      const apiKey = normalizeApiKey(sessionStorage.getItem('dolibarr_api_key') || '');
       const sessionId = sessionStorage.getItem('dolibarr_session_id') || '';
       const sessionToken = sessionStorage.getItem('dolibarr_session_token') || '';
       return {
@@ -176,7 +213,7 @@ export function getDolibarrConfig(): Omit<ApiConfig, 'isConnected' | 'lastTested
   }
 
   // Also check sessionStorage for API key
-  const apiKey = sessionStorage.getItem('dolibarr_api_key') || '';
+  const apiKey = normalizeApiKey(sessionStorage.getItem('dolibarr_api_key') || '');
   const sessionId = sessionStorage.getItem('dolibarr_session_id') || '';
   const sessionToken = sessionStorage.getItem('dolibarr_session_token') || '';
   return { ...defaultResult, apiKey, sessionId, sessionToken };

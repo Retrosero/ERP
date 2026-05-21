@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Warehouse, Plus, Edit2, Trash2, MapPin, Package, AlertTriangle, Search, Eye, ArrowLeftRight, Loader2 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, CardHeader, CardTitle, Button, Input, Select, Table, Badge, Modal } from '@/components/ui';
 import { warehouseApi, productApi, stockApi } from '@/lib/dolibarr';
 import type { Warehouse as WarehouseType, StockMovement } from '@/lib/types/dolibarr';
@@ -137,7 +136,7 @@ export default function Depolar() {
   }));
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -439,6 +438,6 @@ export default function Depolar() {
           <Button variant="secondary" onClick={() => setShowStockModal(false)}>Kapat</Button>
         </div>
       </Modal>
-    </MainLayout>
+    </>
   );
 }

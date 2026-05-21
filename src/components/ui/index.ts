@@ -7,3 +7,4 @@ export { Modal, ConfirmDialog } from './Modal';
 export { Table, Pagination } from './Table';
 export { StatCard } from './StatCard';
 export { ToastProvider, useToast, Alert } from './Toast';
+export { BarcodeScanner, BarcodeInput } from './BarcodeScanner';

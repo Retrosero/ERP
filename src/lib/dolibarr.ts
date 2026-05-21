@@ -39,14 +39,20 @@ export class DolibarrApiError extends Error {
   }
 }
 
+const appendDolibarrApiKey = (url: string, apiKey: string): string => {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}DOLAPIKEY=${encodeURIComponent(apiKey)}`;
+};
+
 // Base fetch wrapper with error handling
 async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const config = getDolibarrConfig();
+  const apiKey = (config.apiKey || '').trim();
 
-  if (!config.baseUrl || !config.apiKey) {
+  if (!config.baseUrl || !apiKey) {
     throw new DolibarrApiError('Dolibarr ayarları yapılandırılmamış. Lütfen Ayarlar sayfasından Dolibarr bağlantısını yapılandırın.', 0);
   }
 
@@ -72,8 +78,7 @@ async function fetchApi<T>(
     }
   } else {
     // Direct mode: connect directly to Dolibarr
-    url = `${config.baseUrl}${config.apiPrefix}${endpoint}`;
-    (headers as Record<string, string>)['DOLAPIKEY'] = config.apiKey;
+    url = appendDolibarrApiKey(`${config.baseUrl}${config.apiPrefix}${endpoint}`, apiKey);
   }
 
   const controller = new AbortController();
@@ -89,12 +94,36 @@ async function fetchApi<T>(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new DolibarrApiError(
-        errorData.error || errorData.message || `API Error: ${response.status}`,
-        response.status,
-        errorData
-      );
+      const rawError = await response.text().catch(() => '');
+      const errorData: unknown = (() => {
+        if (!rawError) return {};
+        try {
+          return JSON.parse(rawError);
+        } catch {
+          return { message: rawError };
+        }
+      })();
+
+      let errorMessage = `API Hatası: ${response.status}`;
+      if (response.status === 401) {
+        errorMessage = 'Yetkisiz erişim. Dolibarr API anahtarını kontrol edin.';
+      } else if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (errorData && typeof errorData === 'object') {
+        const errObj = errorData as Record<string, unknown>;
+        const direct = errObj.error ?? errObj.message;
+        if (typeof direct === 'string') {
+          errorMessage = direct;
+        } else if (direct && typeof direct === 'object') {
+          const nested = direct as Record<string, unknown>;
+          errorMessage =
+            (typeof nested.message === 'string' && nested.message) ||
+            (typeof nested.error === 'string' && nested.error) ||
+            errorMessage;
+        }
+      }
+
+      throw new DolibarrApiError(errorMessage, response.status, errorData);
     }
 
     // Handle empty responses
@@ -181,7 +210,16 @@ export const productApi = {
     if (params?.category) queryParams.set('category', String(params.category));
 
     const query = queryParams.toString();
-    return fetchApi<Product[]>(`/products${query ? `?${query}` : ''}`);
+    const endpoint = `/products${query ? `?${query}` : ''}`;
+    try {
+      return await fetchApi<Product[]>(endpoint);
+    } catch (error) {
+      // Some Dolibarr setups reject optional params with HTTP 400.
+      if (error instanceof DolibarrApiError && error.status === 400) {
+        return fetchApi<Product[]>('/products?sortfield=t.rowid&sortorder=ASC&limit=100');
+      }
+      throw error;
+    }
   },
 
   async get(id: number): Promise<Product> {
@@ -489,6 +527,12 @@ export const expenseApi = {
       method: 'POST',
     });
   },
+
+  async markPaid(id: number): Promise<ExpenseReport> {
+    return fetchApi<ExpenseReport>(`/expensereports/${id}/paided`, {
+      method: 'POST',
+    });
+  },
 };
 
 // Stock & Warehouse API
@@ -605,5 +649,57 @@ export const authApi = {
       },
     });
     return response.json();
+  },
+};
+
+export interface AgendaEventDto {
+  id: number;
+  label?: string;
+  datep?: string | number;
+  datef?: string | number;
+  userownerid?: number;
+  fk_user_action?: number;
+  note_private?: string;
+  note_public?: string;
+}
+
+export const agendaApi = {
+  async list(params?: {
+    sortfield?: string;
+    sortorder?: string;
+    limit?: number;
+    page?: number;
+    user_ids?: string;
+    date_start?: string;
+    date_end?: string;
+  }): Promise<AgendaEventDto[]> {
+    const queryParams = new URLSearchParams();
+    if (params?.sortfield) queryParams.set('sortfield', params.sortfield);
+    if (params?.sortorder) queryParams.set('sortorder', params.sortorder);
+    if (params?.limit) queryParams.set('limit', String(params.limit));
+    if (params?.page) queryParams.set('page', String(params.page));
+    if (params?.user_ids) queryParams.set('user_ids', params.user_ids);
+    if (params?.date_start) queryParams.set('date_start', params.date_start);
+    if (params?.date_end) queryParams.set('date_end', params.date_end);
+    const query = queryParams.toString();
+    return fetchApi<AgendaEventDto[]>(`/agendaevents${query ? `?${query}` : ''}`);
+  },
+
+  async get(id: number): Promise<AgendaEventDto> {
+    return fetchApi<AgendaEventDto>(`/agendaevents/${id}`);
+  },
+
+  async create(data: Partial<AgendaEventDto> & Record<string, unknown>): Promise<number | AgendaEventDto> {
+    return fetchApi<number | AgendaEventDto>('/agendaevents', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: number, data: Partial<AgendaEventDto> & Record<string, unknown>): Promise<unknown> {
+    return fetchApi<unknown>(`/agendaevents/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   },
 };

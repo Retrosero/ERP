@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, ShoppingCart, Eye, Loader2 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
-import { Card, CardHeader, CardTitle, Button, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
+import { Search, ShoppingCart, Eye, Loader2 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, Input, Select, Badge, Table, Pagination, Alert } from '@/components/ui';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { orderApi } from '@/lib/dolibarr';
 import type { Order } from '@/lib/types/dolibarr';
@@ -142,23 +141,8 @@ export function Siparisler() {
   ];
 
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6 animate-fadeIn">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="page-title">Satış Siparişleri</h1>
-            <p className="page-subtitle">
-              {filteredOrders.length} sipariş bulundu
-            </p>
-          </div>
-          <Link to="/siparisler/yeni">
-            <Button icon={<Plus className="w-4 h-4" />}>
-              Yeni Sipariş
-            </Button>
-          </Link>
-        </div>
-
         {/* Error Message */}
         {error && (
           <Alert type="error" title="Hata">
@@ -226,7 +210,7 @@ export function Siparisler() {
           </Card>
         )}
       </div>
-    </MainLayout>
+    </>
   );
 }
 

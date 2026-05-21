@@ -4,7 +4,6 @@ import {
   CheckCircle, XCircle, ArrowRightLeft, Calendar,
   AlertCircle, Eye
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Table, Badge, Modal, StatCard } from '@/components/ui';
 import type { Check, PromissoryNote, CheckStatus, CHECK_STATUS_LABELS } from '@/lib/types/cek-senet';
 
@@ -66,7 +65,7 @@ export default function CekSenet() {
   }).length;
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -372,6 +371,6 @@ export default function CekSenet() {
           )}
         </Modal.Footer>
       </Modal>
-    </MainLayout>
+    </>
   );
 }

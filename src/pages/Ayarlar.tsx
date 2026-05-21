@@ -20,6 +20,8 @@ const efaturaProviders = [
   { value: 'arkapi', label: 'ARKAPI' },
   { value: 'custom', label: 'Özel API' },
 ];
+const normalizeApiKey = (value: string): string =>
+  value.replace(/^Bearer\s+/i, '').replace(/\s+/g, '').trim();
 
 export function Ayarlar() {
   const { config, updateConfig, testConnection, isLoading } = useApi();
@@ -46,26 +48,31 @@ export function Ayarlar() {
   });
 
   const handleTestConnection = async () => {
-    updateConfig({
+    const cleanedApiKey = normalizeApiKey(dolibarrSettings.apiKey);
+    const testConfig = {
       baseUrl: dolibarrSettings.baseUrl,
-      apiKey: dolibarrSettings.apiKey,
+      apiKey: cleanedApiKey,
       apiPrefix: dolibarrSettings.apiPrefix,
       timeout: parseInt(dolibarrSettings.timeout) || 30000,
-    });
-    const success = await testConnection();
+    };
+
+    updateConfig(testConfig);
+    sessionStorage.setItem('dolibarr_api_key', cleanedApiKey);
+    const success = await testConnection(testConfig);
     return success;
   };
 
   const handleSaveDolibarr = async () => {
     setSaving(true);
+    const cleanedApiKey = normalizeApiKey(dolibarrSettings.apiKey);
     updateConfig({
       baseUrl: dolibarrSettings.baseUrl,
-      apiKey: dolibarrSettings.apiKey,
+      apiKey: cleanedApiKey,
       apiPrefix: dolibarrSettings.apiPrefix,
       timeout: parseInt(dolibarrSettings.timeout) || 30000,
     });
     // Also save API key to sessionStorage for security
-    sessionStorage.setItem('dolibarr_api_key', dolibarrSettings.apiKey);
+    sessionStorage.setItem('dolibarr_api_key', cleanedApiKey);
     setTimeout(() => {
       setSaving(false);
       setSaved(true);

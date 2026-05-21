@@ -3,7 +3,6 @@ import {
   Bell, Mail, MessageSquare, Phone, Settings, Plus, Edit2, Trash2,
   Send, CheckCircle, AlertCircle, Clock, Loader2, ToggleLeft, ToggleRight
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import {
   Card, CardHeader, CardTitle, Button, Input, Select,
   Badge, Table, Alert, Modal
@@ -237,17 +236,17 @@ export default function Bildirimler() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
           <p className="text-gray-500">Bildirimler yükleniyor...</p>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -579,6 +578,6 @@ export default function Bildirimler() {
           </div>
         </Modal>
       )}
-    </MainLayout>
+    </>
   );
 }

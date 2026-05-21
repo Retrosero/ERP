@@ -3,7 +3,6 @@ import {
   Search, Plus, Edit2, Trash2, Copy, Play, Pause,
   Calendar, Clock, Repeat, Loader2, AlertTriangle, CheckCircle
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import {
   Card, CardHeader, CardTitle, Button, Input, Select,
   Badge, Table, Pagination, Alert, Modal
@@ -335,17 +334,17 @@ export default function TekrarEdenSiparisler() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
           <p className="text-gray-500">Tekrarlayan siparişler yükleniyor...</p>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -702,6 +701,6 @@ export default function TekrarEdenSiparisler() {
           </div>
         </Modal>
       )}
-    </MainLayout>
+    </>
   );
 }

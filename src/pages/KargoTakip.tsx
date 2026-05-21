@@ -4,7 +4,6 @@ import {
   Clock, CheckCircle, AlertCircle, Phone, MessageSquare,
   ChevronRight, Eye, Edit2, RefreshCw, Send
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import {
   Card, CardHeader, CardTitle, Button, Input, Select,
   Badge, Table, Alert, Modal
@@ -314,17 +313,17 @@ export default function KargoTakip() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
           <p className="text-gray-500">Kargo takip yükleniyor...</p>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -712,6 +711,6 @@ export default function KargoTakip() {
           </div>
         </Modal>
       )}
-    </MainLayout>
+    </>
   );
 }

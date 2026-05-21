@@ -4,7 +4,6 @@ import {
   Package, Receipt, Calendar, Download, Filter, FileText,
   PieChart as LucidePieChart, Activity, Loader2
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Select, StatCard, Alert } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { invoiceApi, orderApi, thirdPartyApi, productApi } from '@/lib/dolibarr';
@@ -150,22 +149,22 @@ export default function RaporMerkezi() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
           <p className="text-gray-500">Raporlar yükleniyor...</p>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <MainLayout>
+      <>
         <Alert type="error" title="Hata">
           {error}
         </Alert>
-      </MainLayout>
+      </>
     );
   }
 
@@ -179,7 +178,7 @@ export default function RaporMerkezi() {
   ];
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -421,6 +420,6 @@ export default function RaporMerkezi() {
           </div>
         </Card.Body>
       </Card>
-    </MainLayout>
+    </>
   );
 }

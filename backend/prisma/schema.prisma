@@ -1,0 +1,1796 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// SUPER ADMIN - SaaS Platform Administration
+// ============================================
+
+model SuperAdmin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("super_admin")
+  is_active Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  logs      AdminLog[]
+
+  @@map("super_admins")
+}
+
+model AdminLog {
+  id          String   @id @default(uuid())
+  admin_id    String
+  action      String
+  entity_type String?
+  entity_id   String?
+  details     Json?
+  ip_address  String?
+  created_at  DateTime @default(now())
+
+  admin       SuperAdmin @relation(fields: [admin_id], references: [id])
+
+  @@map("admin_logs")
+}
+
+// ============================================
+// FIRMS (Tenants) - Her firma bir tenant
+// ============================================
+
+model Firm {
+  id              String   @id @default(uuid())
+
+  // Firma Bilgileri
+  name            String
+  short_name      String?  // URL subdomain için
+  email           String   @unique
+  phone           String?
+  tax_id          String?  // Vergi numarası
+  address         String?
+
+  // Dolibarr Entegrasyonu
+  dolibarr_url    String   // Bu firmaya ait Dolibarr instance URL
+  dolibarr_api_key String  // Bu firmaya ait API Key
+
+  // Abonelik
+  plan            FirmPlan @default(STARTER)
+  status          FirmStatus @default(PENDING)
+
+  // Tarihler
+  trial_starts_at DateTime?
+  trial_ends_at   DateTime?
+  subscription_starts_at DateTime?
+  subscription_ends_at   DateTime?
+
+  // Kullanım Limiteri
+  max_users       Int      @default(5)
+  max_storage_gb  Int      @default(10)
+
+  // Subdomain
+  subdomain       String?  @unique
+
+  // Timestamps
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  modules         ModulePermission[]
+  users           User[]
+  api_keys        ApiKey[]
+  webhooks        Webhook[]
+  error_logs      DolibarrErrorLog[]
+  expiration_alerts ExpirationAlert[]
+  ip_rules        IpAccessRule[]
+  api_usage_logs  ApiUsageLog[]
+  health_logs     FirmHealthLog[]
+  support_tickets SupportTicket[]
+  faq_articles   FaqArticle[]
+  branding_config BrandingConfig?
+  // Attendance / İK
+  attendance_records AttendanceRecord[]
+  work_schedules  WorkSchedule[]
+  work_schedule_assignments WorkScheduleAssignment[]
+  overtime_requests OvertimeRequest[]
+  leave_requests   LeaveRequest[]
+  attendance_devices AttendanceDevice[]
+  attendance_summaries AttendanceSummary[]
+
+  @@map("firms")
+}
+
+enum FirmPlan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum FirmStatus {
+  PENDING      // Kayıt bekliyor
+  TRIAL        // Deneme süresinde
+  ACTIVE       // Aktif abone
+  SUSPENDED    // Askıya alınmış
+  CANCELLED    // İptal edilmiş
+}
+
+// ============================================
+// MODULE PERMISSIONS - Hangi firma hangi modülü kullanabilir
+// ============================================
+
+model ModulePermission {
+  id          String   @id @default(uuid())
+  firm_id     String
+  module      ModuleType
+
+  is_active   Boolean  @default(false)
+  expires_at  DateTime? // Lisans bitiş tarihi
+
+  // Trial desteği
+  is_trial    Boolean  @default(false)
+  trial_ends_at DateTime?
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@unique([firm_id, module])
+  @@map("module_permissions")
+}
+
+enum ModuleType {
+  // Temel Modüller
+  CRM
+  INVENTORY
+  PROJECT
+  HR
+
+  // Satış & Pazarlama
+  SALES
+  POS
+  ECOMMERCE
+
+  // Finans & Muhasebe
+  ACCOUNTING
+  BANKING
+
+  // Operasyonel
+  CALENDAR
+  WEBHOOKS
+  API_ACCESS
+
+  // Raporlama & Analitik
+  ANALYTICS
+  REPORTING
+
+  // Entegrasyonlar
+  INTEGRATION
+}
+
+// ============================================
+// USERS - Firma kullanıcıları
+// ============================================
+
+model User {
+  id              String   @id @default(uuid())
+  firm_id         String
+
+  email           String
+  password        String
+  name            String
+  surname         String?
+  phone           String?
+  role            UserRole @default(USER)
+
+  is_active       Boolean  @default(true)
+  last_login_at   DateTime?
+
+  // Dolibarr User ID mapping
+  dolibarr_user_id Int?
+
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  firm            Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@unique([firm_id, email])
+  @@map("users")
+}
+
+enum UserRole {
+  SUPER_ADMIN // SaaS platform admin
+  ADMIN       // Firma admini
+  MANAGER     // Yönetici
+  USER        // Normal kullanıcı
+  VIEWER      // Sadece görüntüleme
+}
+
+// ============================================
+// API KEYS - Üçüncü parti entegrasyonlar için
+// ============================================
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  firm_id     String
+  name        String   // API key adı
+  key         String   @unique // Hashlenmiş API key
+  key_prefix  String   // İlk 8 karakter (güvenlik)
+
+  permissions String[] // İzinler listesi
+  expires_at  DateTime?
+
+  last_used_at DateTime?
+  usage_count  Int      @default(0)
+
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now())
+
+  firm         Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
+// ============================================
+// WEBHOOKS - Event tabanlı entegrasyonlar
+// ============================================
+
+model Webhook {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  name        String
+  url         String
+  secret      String?  // HMAC signature için
+
+  events      String[] // Dinlenecek eventler
+  is_active   Boolean  @default(true)
+
+  success_count Int     @default(0)
+  failure_count Int     @default(0)
+  last_triggered_at DateTime?
+
+  headers     Json?    // Özel header'lar
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  firm         Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id          String   @id @default(uuid())
+  webhook_id  String
+  event       String
+  payload     Json
+  response_status Int?
+  response_body String?
+  error        String?
+  duration_ms Int?
+
+  created_at   DateTime @default(now())
+
+  @@map("webhook_deliveries")
+}
+
+// ============================================
+// SUBSCRIPTION LOGS - Abonelik geçmişi
+// ============================================
+
+model SubscriptionLog {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  action      String   // UPGRADE, DOWNGRADE, RENEW, CANCEL, etc.
+  from_plan   String?
+  to_plan     String?
+
+  amount      Decimal? @db.Decimal(10, 2)
+  currency    String  @default("TRY")
+
+  payment_method String?
+  transaction_id String?
+
+  notes       String?
+  created_at  DateTime @default(now())
+
+  @@map("subscription_logs")
+}
+
+// ============================================
+// PLANS & PRICING - Abonelik paketleri
+// ============================================
+
+model Plan {
+  id          String   @id @default(uuid())
+
+  name        String
+  slug        String   @unique
+  description String?
+
+  price_monthly Decimal @db.Decimal(10, 2)
+  price_yearly  Decimal @db.Decimal(10, 2)
+
+  // Limits
+  max_users       Int
+  max_storage_gb  Int
+  max_api_calls   Int?
+
+  // Modules included
+  included_modules ModuleType[]
+
+  // Features
+  features     Json?    // Ekstra özellikler
+
+  is_active    Boolean  @default(true)
+  sort_order   Int      @default(0)
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("plans")
+}
+
+// ============================================
+// DOLIBARR ERROR LOGS - Dolibarr API Hataları
+// ============================================
+
+model DolibarrErrorLog {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  // Hata bilgileri
+  endpoint    String   // Hangi endpoint'te hata oldu
+  method      String   // GET, POST, PUT, DELETE
+  status_code Int?     // HTTP status code
+
+  error_type  ErrorType @default(API_ERROR)
+  error_code  String?   // Dolibarr error code
+  error_message String  // Hata mesajı
+
+  // Request/Response
+  request_body  String?  // Gönderilen veri
+  response_body String?  // Gelen hata yanıtı
+
+  // İşlem bilgileri
+  module       String?   // CRM, INVENTORY vs.
+  entity_id    String?   // İlgili entity ID
+  user_id      String?   // İşlemi yapan kullanıcı
+
+  // İzleme
+  trace_id    String?   // Benzersiz trace ID
+  retry_count Int      @default(0)
+  resolved    Boolean  @default(false)
+  resolved_at DateTime?
+  resolved_by String?
+
+  created_at  DateTime @default(now())
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([error_type])
+  @@index([created_at])
+  @@index([resolved])
+  @@map("dolibarr_error_logs")
+}
+
+enum ErrorType {
+  API_ERROR           // Genel API hatası
+  AUTH_ERROR          // Kimlik doğrulama hatası
+  TIMEOUT             // Zaman aşımı
+  RATE_LIMIT          // Rate limit aşıldı
+  VALIDATION_ERROR    // Doğrulama hatası
+  NOT_FOUND           // Kaynak bulunamadı
+  PERMISSION_DENIED   // Yetki hatası
+  CONNECTION_ERROR    // Bağlantı hatası
+  SERVER_ERROR        // Dolibarr sunucu hatası
+  UNKNOWN             // Bilinmeyen hata
+}
+
+// ============================================
+// EXPIRING ITEMS TRACKING - Süresi Dolan Kalemler
+// ============================================
+
+model ExpirationAlert {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  item_type   ExpiryItemType
+  item_id     String   // ApiKey veya ModulePermission ID
+  item_name   String   // Okunabilir isim
+
+  expires_at  DateTime
+  alerted_at  DateTime?
+  alert_sent  Boolean  @default(false)
+
+  // Bildirim durumu
+  email_sent  Boolean  @default(false)
+  email_sent_at DateTime?
+
+  created_at  DateTime @default(now())
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@unique([firm_id, item_type, item_id])
+  @@index([expires_at])
+  @@map("expiration_alerts")
+}
+
+enum ExpiryItemType {
+  API_KEY
+  MODULE_LICENSE
+  TRIAL_PERIOD
+  SUBSCRIPTION
+}
+
+// ============================================
+// IP WHITELIST / BLACKLIST - IP Erişim Kontrolü
+// ============================================
+
+model IpAccessRule {
+  id          String   @id @default(uuid())
+  firm_id     String?
+
+  // IP Bilgisi
+  ip_address  String   // Tek IP veya CIDR notation (örn. 192.168.1.0/24)
+  ip_version  IpVersion @default(IPV4)
+  description String?  // Açıklama
+
+  // Kural tipi
+  rule_type   AccessRuleType
+
+  // Zaman kısıtlaması (opsiyonel)
+  start_time  DateTime? // Hafta içi başlangıç
+  end_time    DateTime? // Hafta içi bitiş
+  days_of_week String[] // Pazartesi, Salı vs.
+
+  // Durum
+  is_active   Boolean  @default(true)
+  priority    Int      @default(0) // Düşük numara = yüksek öncelik
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  created_by  String?
+
+  firm        Firm?    @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([rule_type])
+  @@index([is_active])
+  @@map("ip_access_rules")
+}
+
+enum IpVersion {
+  IPV4
+  IPV6
+}
+
+enum AccessRuleType {
+  WHITELIST   // Sadece bu IP'ler erişebilir
+  BLACKLIST   // Bu IP'ler erişemez
+}
+
+// ============================================
+// SESSION MANAGEMENT - Oturum Yönetimi
+// ============================================
+
+model Session {
+  id          String   @id @default(uuid())
+
+  // Kimlik
+  user_id     String
+  user_type   UserSessionType // SUPER_ADMIN, FIRM_USER, API_KEY
+  firm_id     String?
+
+  // Oturum bilgisi
+  token_hash  String   @unique // JWT token hash
+  ip_address  String?
+  user_agent  String?
+
+  // Coğrafi bilgi
+  country     String?
+  city        String?
+  latitude    Decimal? @db.Decimal(10, 8)
+  longitude   Decimal? @db.Decimal(11, 8)
+
+  // Zaman
+  created_at  DateTime @default(now())
+  expires_at  DateTime
+  last_active_at DateTime @default(now())
+  revoked_at  DateTime?
+
+  // Durum
+  is_active   Boolean  @default(true)
+  is_current  Boolean  @default(false)
+
+  // metadata
+  device_type String?  // mobile, desktop, tablet
+  browser     String?
+  os          String?
+
+  @@index([user_id])
+  @@index([user_type])
+  @@index([firm_id])
+  @@index([is_active])
+  @@index([expires_at])
+  @@map("sessions")
+}
+
+enum UserSessionType {
+  SUPER_ADMIN
+  FIRM_USER
+  API_KEY
+}
+
+// ============================================
+// USAGE ANALYTICS - Kullanım İstatistikleri
+// ============================================
+
+model ApiUsageLog {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  // İstek bilgileri
+  endpoint    String
+  method      String
+  status_code Int
+
+  // Performans
+  duration_ms Int
+
+  // Kullanıcı
+  user_id     String?
+  user_type   String?  // SUPER_ADMIN, FIRM_USER, API_KEY
+
+  // IP ve cihaz
+  ip_address  String?
+  user_agent  String?
+
+  // Cache bilgisi
+  cache_hit   Boolean @default(false)
+
+  // Hata bilgisi
+  error_code  String?
+  error_message String?
+
+  created_at  DateTime @default(now())
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([endpoint])
+  @@index([created_at])
+  @@index([user_id])
+  @@map("api_usage_logs")
+}
+
+model FirmHealthLog {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  // Health check sonucu
+  status      HealthStatus
+  response_time_ms Int?
+
+  // Dolibarr sağlık durumu
+  dolibarr_version String?
+  dolibarr_api_reachable Boolean @default(false)
+  dolibarr_db_connected Boolean @default(false)
+
+  // Uyarılar
+  warnings    Json?    // Uyarı listesi
+
+  created_at  DateTime @default(now())
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([created_at])
+  @@index([status])
+  @@map("firm_health_logs")
+}
+
+enum HealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+  UNKNOWN
+}
+
+// ============================================
+// AUTOMATION TASKS - Otomasyon Görevleri
+// ============================================
+
+model ScheduledTask {
+  id          String   @id @default(uuid())
+
+  name        String
+  description String?
+  task_type   ScheduledTaskType
+
+  // Cron ifadesi (örn. "0 0 * * *" = her gece yarım)
+  cron_expression String
+
+  // Son çalışma
+  last_run_at DateTime?
+  last_run_status String?
+  last_run_result String?
+
+  // Sonraki çalışma
+  next_run_at DateTime?
+
+  // Ayarlar
+  is_active   Boolean  @default(true)
+  timeout_seconds Int  @default(300)
+
+  // Sınırlar
+  max_retries Int      @default(3)
+  retry_delay_minutes Int @default(5)
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([task_type])
+  @@index([is_active])
+  @@map("scheduled_tasks")
+}
+
+enum ScheduledTaskType {
+  CHECK_EXPIRING_ITEMS    // Süresi dolanları kontrol et
+  AUTO_SUSPEND_TRIAL       // Trial süresi biten firmaları askıya al
+  SEND_EXPIRY_NOTIFICATIONS // Bildirim gönder
+  CLEANUP_SESSIONS         // Süresi dolmuş oturumları temizle
+  SYNC_DOLIBARR_HEALTH     // Dolibarr sağlık kontrolü
+  GENERATE_USAGE_REPORTS   // Kullanım raporları oluştur
+  AUTO_RENEW_SUBSCRIPTIONS // Abonelik yenileme
+  ARCHIVE_OLD_LOGS         // Eski logları arşivle
+  CUSTOM                   // Özel görev
+}
+
+model ScheduledTaskLog {
+  id          String   @id @default(uuid())
+  task_id    String
+
+  status      TaskLogStatus
+  started_at  DateTime @default(now())
+  completed_at DateTime?
+
+  // Sonuç
+  result      String?  // Success, Failed, Partial
+  error_message String?
+  output      String? // Görev çıktısı
+
+  // İstatistikler
+  items_processed Int @default(0)
+  items_failed     Int @default(0)
+
+  @@index([task_id])
+  @@index([status])
+  @@map("scheduled_task_logs")
+}
+
+enum TaskLogStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================
+// SUPPORT TICKET SYSTEM - Destek Sistemi
+// ============================================
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  firm_id     String?
+
+  // Müşteri bilgileri
+  user_id     String?
+  user_email  String?  // Ziyaretçi için email
+  user_name   String?
+
+  // Başlık ve içerik
+  subject     String
+  description String   @db.Text
+
+  // Kategori ve öncelik
+  category    TicketCategory
+  priority    TicketPriority @default(MEDIUM)
+
+  // Durum
+  status      TicketStatus @default(OPEN)
+
+  // Atama
+  assigned_to String?  // Admin ID
+  assigned_at DateTime?
+
+  // Yanıt sayısı
+  message_count Int    @default(0)
+
+  // Değerlendirme
+  rating      Int?     // 1-5 yıldız
+  feedback    String?
+
+  // Takip
+  last_reply_at DateTime?
+  last_reply_by String?
+
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  firm        Firm?    @relation(fields: [firm_id], references: [id], onDelete: SetNull)
+  messages    SupportMessage[]
+
+  @@index([firm_id])
+  @@index([status])
+  @@index([priority])
+  @@index([assigned_to])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id          String   @id @default(uuid())
+  ticket_id   String
+
+  sender_id   String
+  sender_type MessageSenderType
+  sender_name String
+
+  content     String   @db.Text
+
+  // Ek dosyalar
+  attachments Json?    // [{name, url, size}]
+
+  // Okundu bilgisi
+  is_read     Boolean @default(false)
+  read_at     DateTime?
+
+  created_at  DateTime @default(now())
+
+  ticket      SupportTicket @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+
+  @@index([ticket_id])
+  @@map("support_messages")
+}
+
+enum TicketCategory {
+  TECHNICAL      // Teknik sorun
+  BILLING        // Faturalama
+  FEATURE_REQUEST // Özellik talebi
+  BUG_REPORT     // Hata raporu
+  GENERAL        // Genel
+  DOLIBARR_INTEGRATION // Dolibarr entegrasyonu
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum MessageSenderType {
+  CUSTOMER
+  SUPPORT_AGENT
+  SYSTEM
+}
+
+// ============================================
+// FAQ & KNOWLEDGE BASE - Bilgi Bankası
+// ============================================
+
+model FaqArticle {
+  id          String   @id @default(uuid())
+  firm_id     String?  // Firma bazlı veya global
+
+  title       String
+  slug        String   @unique
+
+  // Kategori
+  category    String
+
+  // İçerik (Markdown)
+  content     String   @db.Text
+
+  // SEO
+  meta_title   String?
+  meta_description String?
+
+  // Durum
+  is_published Boolean @default(false)
+  is_featured  Boolean @default(false)
+
+  // Görüntüleme
+  view_count  Int      @default(0)
+
+  // Sıralama
+  sort_order  Int      @default(0)
+
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  firm        Firm?    @relation(fields: [firm_id], references: [id], onDelete: SetNull)
+
+  @@index([firm_id])
+  @@index([category])
+  @@index([is_published])
+  @@map("faq_articles")
+}
+
+// ============================================
+// ANNOUNCEMENTS - Duyurular
+// ============================================
+
+model Announcement {
+  id          String   @id @default(uuid())
+
+  title        String
+  content      String   @db.Text
+
+  // Hedef kitle
+  target_type  AnnouncementTarget @default(ALL)
+
+  // Belirli firmalar
+  firm_ids     String[] // Hedef firma ID'leri
+
+  // Plan bazlı
+  plan_filters String[] // ['STARTER', 'PROFESSIONAL']
+
+  // Tarihler
+  starts_at    DateTime?
+  ends_at      DateTime?
+
+  // Öncelik ve tip
+  priority     AnnouncementPriority @default(NORMAL)
+  type         AnnouncementType @default(INFO)
+
+  // Görsel
+  image_url    String?
+
+  // Durum
+  is_active    Boolean @default(true)
+  is_dismissible Boolean @default(true)
+
+  // İstatistikler
+  view_count   Int      @default(0)
+  click_count  Int      @default(0)
+
+  // Action URL
+  action_url   String?
+  action_label String?
+
+  created_by  String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  views       AnnouncementView[]
+
+  @@index([target_type])
+  @@index([starts_at])
+  @@index([is_active])
+  @@map("announcements")
+}
+
+model AnnouncementView {
+  id              String   @id @default(uuid())
+  announcement_id String
+  firm_id         String
+  user_id         String?
+
+  viewed_at       DateTime @default(now())
+  dismissed      Boolean @default(false)
+  dismissed_at    DateTime?
+
+  announcement   Announcement @relation(fields: [announcement_id], references: [id], onDelete: Cascade)
+
+  @@unique([announcement_id, firm_id, user_id])
+  @@index([announcement_id])
+  @@map("announcement_views")
+}
+
+enum AnnouncementTarget {
+  ALL
+  SPECIFIC_FIRMS
+  PLAN_BASED
+  NEW_FIRMS
+}
+
+enum AnnouncementPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum AnnouncementType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
+  PROMO
+}
+
+// ============================================
+// WHITE-LABEL BRANDING - Özelleştirme
+// ============================================
+
+model BrandingConfig {
+  id          String   @id @default(uuid())
+  firm_id     String   @unique
+
+  // Logo'lar
+  logo_url    String?
+  logo_dark_url String?
+  favicon_url String?
+
+  // Renkler
+  primary_color String @default("#3B82F6")
+  secondary_color String @default("#10B981")
+  accent_color String @default("#F59E0B")
+  background_color String @default("#FFFFFF")
+  text_color String @default("#1F2937")
+
+  // Font
+  font_family String?
+  heading_font String?
+  body_font String?
+
+  // Şablonlar
+  email_template String? // Email şablonu
+
+  // Özel domain
+  custom_domain String? @unique
+
+  // Footer
+  footer_text String?
+  footer_links Json?    // [{label, url}]
+
+  is_active    Boolean @default(true)
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  firm         Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@map("branding_configs")
+}
+
+// ============================================
+// ATTENDANCE / PERSONEL GİRİŞ-ÇIKIŞ TAKİBİ
+// ============================================
+
+model AttendanceRecord {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  // Personel bilgisi
+  user_id     String
+  dolibarr_user_id Int?
+
+  // Giriş bilgisi
+  check_in_time    DateTime?
+  check_in_method  CheckMethod?       // MANUAL, QR_CODE, RFID, BIOMETRIC, GPS
+  check_in_location String?            // Cihaz/lokasyon adı
+  check_in_latitude Decimal? @db.Decimal(10, 8)
+  check_in_longitude Decimal? @db.Decimal(11, 8)
+  check_in_address  String?           // Adres bilgisi
+  check_in_ip        String?           // Giriş IP adresi
+  check_in_device    String?           // Cihaz bilgisi
+
+  // Çıkış bilgisi
+  check_out_time     DateTime?
+  check_out_method   CheckMethod?
+  check_out_location String?
+  check_out_latitude  Decimal? @db.Decimal(10, 8)
+  check_out_longitude Decimal? @db.Decimal(11, 8)
+  check_out_address   String?
+  check_out_ip        String?
+  check_out_device    String?
+
+  // Hesaplamalar
+  total_hours        Decimal? @db.Decimal(5, 2)  // Toplam saat (ondalık)
+  overtime_hours     Decimal? @db.Decimal(5, 2)  // Fazla mesai saat
+  is_overnight       Boolean  @default(false)     // Gece boyunca devam eden
+
+  // Durum
+  status             AttendanceStatus @default(PENDING)
+  notes              String?
+
+  // Onay
+  approved_by        String?
+  approved_at        DateTime?
+
+  // Otomatik kayıt mı?
+  is_auto_generated  Boolean  @default(false)
+
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  firm               Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([user_id])
+  @@index([dolibarr_user_id])
+  @@index([check_in_time])
+  @@index([check_out_time])
+  @@index([status])
+  @@map("attendance_records")
+}
+
+enum CheckMethod {
+  MANUAL        // Manuel giriş/çıkış
+  QR_CODE       // QR kod tarama
+  RFID          // RFID kart okuma
+  BIOMETRIC     // Parmak izi/yüz tanıma
+  GPS           // GPS konum tabanlı
+  MOBILE_APP    // Mobil uygulama
+  WEB_PORTAL    // Web portal girişi
+}
+
+enum AttendanceStatus {
+  PENDING       // Beklemede (sadece giriş yapılmış)
+  COMPLETED     // Tamamlandı (giriş-çıkış yapılmış)
+  APPROVED      // Onaylandı
+  REJECTED      // Reddedildi
+  CANCELLED     // İptal edildi
+}
+
+// ============================================
+// WORK SCHEDULE / ÇALIŞMA PROGRAMI
+// ============================================
+
+model WorkSchedule {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  name        String
+  description String?
+
+  // Varsayılan mı?
+  is_default  Boolean  @default(false)
+  is_active   Boolean  @default(true)
+
+  // Haftalık çalışma günleri
+  work_days   String[] // ["MONDAY", "TUESDAY", "WEDNESDAY", ...]
+  work_start_time String // "09:00"
+  work_end_time   String // "18:00"
+
+  // Esnek çalışma
+  allow_flexible_hours Boolean @default(false)
+  min_daily_hours     Decimal? @db.Decimal(4, 2)
+  max_daily_hours     Decimal? @db.Decimal(12, 2)
+
+  // Molalar
+  break_start String?  // "12:00"
+  break_end   String?  // "13:00"
+  break_duration_minutes Int?
+
+  // Gece çalışması
+  allows_overnight  Boolean @default(false)
+  overnight_start   String? // "22:00"
+
+  // Hafta sonu
+  weekend_days      String[] // ["SATURDAY", "SUNDAY"]
+
+  // İzin günleri (resmi tatiller vb.)
+  excluded_dates    Json?    // [{date: "2025-01-01", name: "Yılbaşı"}]
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  firm         Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+  assignments  WorkScheduleAssignment[]
+
+  @@index([firm_id])
+  @@index([is_default])
+  @@map("work_schedules")
+}
+
+model WorkScheduleAssignment {
+  id              String   @id @default(uuid())
+  firm_id         String
+
+  // Atama türü: USER veya TEAM
+  assign_type     AssignType
+  assign_id       String   // user_id veya team_id
+
+  // Hangi çalışma programı
+  schedule_id     String
+
+  // Tarih aralığı
+  start_date      DateTime?
+  end_date        DateTime?
+
+  // Özel çalışma saati (opsiyonel, genel programı override eder)
+  custom_start_time String?
+  custom_end_time   String?
+
+  // Durum
+  is_active       Boolean  @default(true)
+
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  firm            Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+  schedule        WorkSchedule @relation(fields: [schedule_id], references: [id], onDelete: Cascade)
+
+  @@unique([firm_id, assign_type, assign_id])
+  @@index([firm_id])
+  @@index([schedule_id])
+  @@map("work_schedule_assignments")
+}
+
+enum AssignType {
+  USER
+  TEAM
+  DEPARTMENT
+}
+
+// ============================================
+// OVERTIME / FAZLA MESAİ
+// ============================================
+
+model OvertimeRequest {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  user_id     String
+  dolibarr_user_id Int?
+
+  // Tarihler
+  date        DateTime @db.Date
+
+  // Saatler
+  start_time  String   // "18:00"
+  end_time    String   // "22:00"
+
+  // Hesaplama
+  hours       Decimal  @db.Decimal(4, 2)  // Toplam saat
+
+  // Nedeni
+  reason      String?
+
+  // Onay durumu
+  status      OvertimeStatus @default(PENDING)
+
+  // Onaylayan
+  approved_by String?
+  approved_at DateTime?
+  rejection_reason String?
+
+  // Ücretlendirme
+  paid        Boolean  @default(true)  // Ücretli/ücretsiz
+  rate_multiplier Decimal @default(1.5) @db.Decimal(3, 2) // 1.5x, 2x vb.
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@unique([firm_id, user_id, date, start_time, end_time])
+  @@index([firm_id])
+  @@index([user_id])
+  @@index([status])
+  @@index([date])
+  @@map("overtime_requests")
+}
+
+enum OvertimeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// ============================================
+// LEAVE / İZİN HAREKETLERİ (Güncelleme)
+// ============================================
+
+model LeaveRequest {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  user_id     String
+  dolibarr_user_id Int?
+
+  // İzin türü
+  leave_type  LeaveType
+
+  // Tarihler
+  start_date  DateTime
+  end_date    DateTime
+
+  // Toplam gün (hesaplanan)
+  total_days  Decimal  @db.Decimal(5, 2)
+  working_days Int     // Çalışma günü sayısı
+
+  // Açıklama
+  reason      String?
+  notes       String?
+
+  // Durum
+  status      LeaveStatus @default(PENDING)
+
+  // Onaylayan
+  approved_by String?
+  approved_at DateTime?
+  rejection_reason String?
+
+  // Yerine kimin çalışacağı
+  substitute_user_id String?
+
+  // İznin güncellenip güncellenmediği (attendance'a yansıdı mı?)
+  attendance_synced Boolean @default(false)
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([user_id])
+  @@index([status])
+  @@index([leave_type])
+  @@index([start_date])
+  @@map("leave_requests")
+}
+
+enum LeaveType {
+  ANNUAL       // Yıllık izin
+  SICK         // Hastalık izni
+  UNPAID      // Ücretsiz izin
+  MATERNITY    // Doğum izni
+  PATERNITY    // Babalık izni
+  MARRIAGE     // Evlilik izni
+  DEATH        // Ölüm izni (yakın akraba)
+  COMPENSATORY // Serbest zaman (nöbet/hafta sonu çalışması karşılığı)
+  EXCUSED      // Mazeret izni
+  BUSINESS     // İş seyahati
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// ============================================
+// ATTENDANCE DEVICE / CİHAZ YÖNETİMİ
+// ============================================
+
+model AttendanceDevice {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  name        String
+  type        DeviceType
+  location    String?
+
+  // Bağlantı bilgisi
+  ip_address  String?
+  mac_address String?
+
+  // Çalışma modu
+  mode        DeviceMode @default(BOTH) // IN, OUT, BOTH
+
+  // Aktif mi?
+  is_active   Boolean  @default(true)
+
+  // Son senkronizasyon
+  last_sync_at DateTime?
+
+  // Ayarlar
+  settings    Json?    // {timeout, beep_on_success, ...}
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([is_active])
+  @@map("attendance_devices")
+}
+
+enum DeviceType {
+  FINGERPRINT      // Parmak izi cihazı
+  FACE_RECOGNITION // Yüz tanıma cihazı
+  RFID_READER      // RFID kart okuyucu
+  QR_SCANNER       // QR kod tarayıcı
+  MOBILE_DEVICE    // Mobil cihaz
+  WEB_PORTAL       // Web portal
+  KIOSK           // Kiosk cihazı
+}
+
+enum DeviceMode {
+  IN
+  OUT
+  BOTH
+}
+
+// ============================================
+// ATTENDANCE SUMMARY / ÖZET RAPOR
+// ============================================
+
+model AttendanceSummary {
+  id              String   @id @default(uuid())
+  firm_id         String
+
+  user_id         String
+  dolibarr_user_id Int?
+
+  // Dönem
+  period_start    DateTime @db.Date
+  period_end      DateTime @db.Date
+
+  // Çalışma günleri
+  working_days    Int      // Toplam çalışma günü
+  present_days    Int      // Geldiği gün
+  absent_days     Int      // Gelmediği gün
+  late_days       Int      // Geç kaldığı gün
+
+  // Saatler
+  total_work_hours     Decimal @db.Decimal(7, 2) // Toplam çalışma saati
+  total_overtime_hours Decimal @db.Decimal(7, 2) // Toplam fazla mesai
+  total_late_hours     Decimal @db.Decimal(5, 2) // Toplam geç kalma
+
+  // İzinler
+  leave_days      Int      @default(0)
+  sick_days       Int      @default(0)
+
+  // Verimlilik (%)
+  productivity_rate Decimal @db.Decimal(5, 2)
+
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  firm            Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@unique([firm_id, user_id, period_start, period_end])
+  @@index([firm_id])
+  @@index([user_id])
+  @@index([period_start])
+  @@map("attendance_summaries")
+}
+
+// ============================================
+// SALARY DEFINITION / MAAŞ TANIMI
+// ============================================
+
+model SalaryDefinition {
+  id                String   @id @default(uuid())
+  firm_id           String
+
+  user_id           String
+
+  // Temel Maaş
+  base_salary       Decimal  @db.Decimal(12, 2)
+  currency          String   @default("TRY")
+
+  // Saat Hesaplama
+  hourly_rate       Decimal? @db.Decimal(10, 2)
+  daily_rate        Decimal? @db.Decimal(10, 2)
+
+  // Ek Ödemeler
+  meal_allowance    Decimal  @default(0) @db.Decimal(10, 2)
+  transport_allowance Decimal @default(0) @db.Decimal(10, 2)
+  housing_allowance Decimal  @default(0) @db.Decimal(10, 2)
+  other_allowances  Decimal  @default(0) @db.Decimal(10, 2)
+
+  // Kesintiler (varsayılan oranlar)
+  sgk_rate          Decimal  @default(0.14) @db.Decimal(5, 4)
+  unemployment_rate Decimal  @default(0.01) @db.Decimal(5, 4)
+  stamp_duty_rate   Decimal  @default(0.00759) @db.Decimal(6, 5)
+
+  // Mesai Çarpanları
+  overtime_rate     Decimal  @default(1.5) @db.Decimal(3, 2)
+  weekend_rate      Decimal  @default(2.0) @db.Decimal(3, 2)
+  holiday_rate      Decimal  @default(2.0) @db.Decimal(3, 2)
+
+  // Yasal Bilgiler
+  insurance_number  String?
+  insurance_type    String?
+  tax_id            String?
+
+  // Çalışma Bilgileri
+  work_hours_per_month Int   @default(225)
+
+  // Geçerlilik
+  effective_date    DateTime @default(now())
+  end_date          DateTime?
+
+  is_active         Boolean  @default(true)
+
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  firm              Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@unique([firm_id, user_id, effective_date])
+  @@index([firm_id])
+  @@index([user_id])
+  @@map("salary_definitions")
+}
+
+// ============================================
+// PAYROLL / BORDRO
+// ============================================
+
+model Payroll {
+  id                String   @id @default(uuid())
+  firm_id           String
+  user_id           String
+
+  // Dönem Bilgisi
+  period_year       Int
+  period_month      Int
+  period_start      DateTime
+  period_end        DateTime
+
+  // Çalışma Bilgileri
+  working_days      Int
+  actual_days       Int
+  overtime_hours    Decimal  @default(0) @db.Decimal(6, 2)
+  weekend_hours     Decimal  @default(0) @db.Decimal(6, 2)
+  holiday_hours     Decimal  @default(0) @db.Decimal(6, 2)
+  absence_days      Int      @default(0)
+  late_days         Int      @default(0)
+
+  // Brüt Maaş
+  base_salary       Decimal  @db.Decimal(12, 2)
+  daily_rate        Decimal  @db.Decimal(10, 2)
+
+  // Eklentiler
+  meal_allowance    Decimal  @default(0) @db.Decimal(10, 2)
+  transport_allowance Decimal @default(0) @db.Decimal(10, 2)
+  housing_allowance Decimal  @default(0) @db.Decimal(10, 2)
+  overtime_pay      Decimal  @default(0) @db.Decimal(10, 2)
+  weekend_pay       Decimal  @default(0) @db.Decimal(10, 2)
+  holiday_pay       Decimal  @default(0) @db.Decimal(10, 2)
+  other_earnings    Decimal  @default(0) @db.Decimal(10, 2)
+
+  gross_salary      Decimal  @db.Decimal(12, 2)
+
+  // Yasal Kesintiler
+  sgk_employee      Decimal  @default(0) @db.Decimal(10, 2)
+  unemployment_employee Decimal @default(0) @db.Decimal(10, 2)
+  income_tax        Decimal  @default(0) @db.Decimal(10, 2)
+  stamp_duty        Decimal  @default(0) @db.Decimal(10, 2)
+  agi_deduction     Decimal  @default(0) @db.Decimal(10, 2)
+  other_deductions  Decimal  @default(0) @db.Decimal(10, 2)
+
+  total_deductions  Decimal  @db.Decimal(10, 2)
+
+  // Net Maaş
+  net_salary        Decimal  @db.Decimal(12, 2)
+
+  // İşveren Maliyeti
+  sgk_employer     Decimal  @default(0) @db.Decimal(10, 2)
+  unemployment_employer Decimal @default(0) @db.Decimal(10, 2)
+  total_cost       Decimal  @db.Decimal(12, 2)
+
+  // Avans ve Zimmet Kesintisi
+  advance_deduction Decimal  @default(0) @db.Decimal(10, 2)
+  equipment_deduction Decimal @default(0) @db.Decimal(10, 2)
+
+  // Ödeme
+  payment_date      DateTime?
+  payment_method    String?
+  payment_reference String?
+  bank_account      String?
+
+  // Durum
+  status            PayrollStatus @default(DRAFT)
+
+  // Onay
+  approved_by       String?
+  approved_at       DateTime?
+
+  // Notlar
+  notes             String?
+
+  // Dolibarr
+  dolibarr_payroll_id Int?
+
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  firm              Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@unique([firm_id, user_id, period_year, period_month])
+  @@index([firm_id])
+  @@index([user_id])
+  @@index([period_year, period_month])
+  @@index([status])
+  @@map("payrolls")
+}
+
+enum PayrollStatus {
+  DRAFT
+  CALCULATED
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+// ============================================
+// OVERTIME RECORD / FAZLA MESAİ
+// ============================================
+
+model OvertimeRecord {
+  id                String   @id @default(uuid())
+  firm_id           String
+  user_id           String
+
+  period_year       Int
+  period_month      Int
+
+  type              OvertimeType
+
+  date              DateTime @db.Date
+  start_time        String
+  end_time          String
+
+  hours             Decimal  @db.Decimal(4, 2)
+  rate_multiplier   Decimal  @default(1.5) @db.Decimal(3, 2)
+
+  hourly_rate       Decimal  @db.Decimal(10, 2)
+  total_amount      Decimal  @db.Decimal(10, 2)
+
+  reason            String?
+  description       String?
+
+  status            OvertimeRecordStatus @default(PENDING)
+  approved_by       String?
+  approved_at       DateTime?
+  rejection_reason  String?
+
+  is_paid           Boolean  @default(false)
+  paid_in_period    Int?
+  payroll_id        String?
+
+  dolibarr_id       Int?
+
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  firm              Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([user_id])
+  @@index([period_year, period_month])
+  @@index([status])
+  @@map("overtime_records")
+}
+
+enum OvertimeType {
+  WEEKDAY
+  WEEKEND
+  HOLIDAY
+  NIGHT
+  COMPENSATORY
+}
+
+enum OvertimeRecordStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  PAID
+}
+
+// ============================================
+// ADVANCE PAYMENT / AVANS
+// ============================================
+
+model AdvancePayment {
+  id                String   @id @default(uuid())
+  firm_id           String
+  user_id           String
+
+  amount            Decimal  @db.Decimal(12, 2)
+  currency          String   @default("TRY")
+
+  request_date      DateTime @default(now())
+  requested_amount  Decimal  @db.Decimal(12, 2)
+  reason            String?
+
+  status            AdvanceStatus @default(PENDING)
+  approved_by       String?
+  approved_at       DateTime?
+  rejection_reason  String?
+
+  payment_date      DateTime?
+  payment_method    String?
+  reference_no      String?
+
+  installment_plan  Json?
+  total_installments Int?
+  remaining_amount  Decimal? @db.Decimal(12, 2)
+
+  deducted_from_payroll Boolean @default(false)
+  deduction_start_period Int?
+  payroll_id        String?
+
+  remaining_balance Decimal  @default(0) @db.Decimal(12, 2)
+
+  notes             String?
+
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  firm              Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([user_id])
+  @@index([status])
+  @@index([request_date])
+  @@map("advance_payments")
+}
+
+enum AdvanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+  PARTIAL
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================
+// EQUIPMENT CATEGORY / EKİPMAN KATEGORİ
+// ============================================
+
+model EquipmentCategory {
+  id          String   @id @default(uuid())
+  firm_id     String
+
+  name        String
+  description String?
+  icon        String?
+
+  is_active   Boolean  @default(true)
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+
+  equipment   Equipment[]
+
+  @@index([firm_id])
+  @@map("equipment_categories")
+}
+
+// ============================================
+// EQUIPMENT / EKİPMAN
+// ============================================
+
+model Equipment {
+  id          String   @id @default(uuid())
+  firm_id     String
+  category_id String
+
+  name        String
+  brand       String?
+  model       String?
+  serial_number String?
+  barcode     String?
+
+  status      EquipmentStatus @default(AVAILABLE)
+
+  purchase_price Decimal? @db.Decimal(12, 2)
+  depreciation   Decimal? @db.Decimal(10, 2)
+  current_value  Decimal? @db.Decimal(12, 2)
+
+  description String?
+  properties  Json?
+  image_url   String?
+
+  warranty_expires DateTime?
+  last_maintenance DateTime?
+  next_maintenance DateTime?
+
+  location    String?
+
+  is_active   Boolean  @default(true)
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  firm        Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+  category    EquipmentCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  assignments EquipmentAssignment[]
+
+  @@index([firm_id])
+  @@index([category_id])
+  @@index([status])
+  @@map("equipment")
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  ASSIGNED
+  MAINTENANCE
+  RETIRED
+  LOST
+}
+
+// ============================================
+// EQUIPMENT ASSIGNMENT / ZİMMET
+// ============================================
+
+model EquipmentAssignment {
+  id            String   @id @default(uuid())
+  firm_id       String
+  equipment_id  String
+
+  user_id       String
+
+  assigned_date DateTime @default(now())
+  return_date   DateTime?
+
+  status        AssignmentStatus @default(ACTIVE)
+
+  condition_when_issued  EquipmentCondition @default(NEW)
+  condition_when_returned EquipmentCondition?
+
+  notes         String?
+  signature     String?
+
+  approved_by   String?
+  approved_at   DateTime?
+
+  return_notes  String?
+
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  firm          Firm     @relation(fields: [firm_id], references: [id], onDelete: Cascade)
+  equipment     Equipment @relation(fields: [equipment_id], references: [id], onDelete: Cascade)
+
+  @@index([firm_id])
+  @@index([user_id])
+  @@index([equipment_id])
+  @@index([status])
+  @@map("equipment_assignments")
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  RETURNED
+  LOST
+  DAMAGED
+}
+
+enum EquipmentCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+  DAMAGED
+}

@@ -3,7 +3,6 @@ import {
   Plus, Search, Filter, Download, Receipt, Tag,
   Calendar, Repeat, Trash2, Edit, AlertCircle, Loader2
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Table, Badge, Modal, StatCard, Alert } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { stockApi, expenseApi } from '@/lib/dolibarr';
@@ -115,7 +114,7 @@ export default function Giderler() {
   };
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -388,6 +387,6 @@ export default function Giderler() {
           <Button variant="primary">Kaydet</Button>
         </Modal.Footer>
       </Modal>
-    </MainLayout>
+    </>
   );
 }

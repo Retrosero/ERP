@@ -3,7 +3,6 @@ import {
   FileText, Send, Download, Search, Filter, Eye,
   Clock, CheckCircle, XCircle, AlertTriangle, Mail, RefreshCw, Settings
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Table, Badge, Modal, StatCard, Alert } from '@/components/ui';
 import { testConnection, getIncomingInvoices, getOutgoingInvoices, sendInvoice, Invoice } from '@/lib/efatura';
 import { useNavigate } from 'react-router-dom';
@@ -281,7 +280,7 @@ export default function EFatura() {
   const errorCount = filteredInvoices.filter(i => i.status === 'error').length;
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -653,6 +652,6 @@ export default function EFatura() {
           </Button>
         </div>
       </Modal>
-    </MainLayout>
+    </>
   );
 }

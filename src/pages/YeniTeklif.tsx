@@ -4,7 +4,6 @@ import {
   ArrowLeft, Save, Plus, Trash2, FileText, Send,
   Package, Building2, Loader2
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Alert } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
 import { proposalApi, thirdPartyApi, productApi } from '@/lib/dolibarr';
@@ -187,17 +186,17 @@ export default function YeniTeklif() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
           <p className="text-gray-500">Müşteri ve ürünler yükleniyor...</p>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6 animate-fadeIn">
         {/* Header */}
         <div className="mb-6">
@@ -450,6 +449,6 @@ export default function YeniTeklif() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </>
   );
 }

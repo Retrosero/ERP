@@ -4,7 +4,6 @@ import {
   Search, Plus, Minus, ShoppingBag, X, User, CreditCard,
   Banknote, Trash2, Send, Barcode, QrCode, CheckCircle, Loader2
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Table, Badge, Modal } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { productApi, thirdPartyApi } from '@/lib/dolibarr';
@@ -115,18 +114,18 @@ export default function HizliSatis() {
 
   if (loading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <span className="ml-3 text-gray-500">Ürünler yükleniyor...</span>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <MainLayout>
+      <>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-700">{error}</p>
           <Button 
@@ -137,12 +136,12 @@ export default function HizliSatis() {
             Tekrar Dene
           </Button>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -483,6 +482,6 @@ export default function HizliSatis() {
           </div>
         )}
       </Modal>
-    </MainLayout>
+    </>
   );
 }

@@ -18,8 +18,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
-import { Card, StatCard, Badge, Button } from '@/components/ui';
+import { Card, StatCard, Badge } from '@/components/ui';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 
 export function Dashboard() {
@@ -91,38 +90,20 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <MainLayout>
+      <>
         <div className="flex items-center justify-center h-96">
           <div className="flex items-center gap-3">
             <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
             <span className="text-slate-500">Veriler yükleniyor...</span>
           </div>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="page-title">Dashboard</h1>
-            <p className="page-subtitle">
-              {new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="secondary" size="sm" icon={<FileText className="w-4 h-4" />}>
-              Rapor İndir
-            </Button>
-            <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />}>
-              Yeni Sipariş
-            </Button>
-          </div>
-        </div>
-
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
@@ -300,7 +281,7 @@ export function Dashboard() {
           </Card>
         </div>
       </div>
-    </MainLayout>
+    </>
   );
 }
 

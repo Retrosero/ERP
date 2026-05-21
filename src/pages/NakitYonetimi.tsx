@@ -4,7 +4,6 @@ import {
   ArrowLeftRight, Search, Filter, Download, TrendingUp,
   CreditCard, Receipt, ChevronRight, X
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Table, Badge, Modal, StatCard } from '@/components/ui';
 import type { CashAccount, BankAccount, CashFlow, CashFlowFilter } from '@/lib/types/cash';
 
@@ -60,7 +59,7 @@ export default function NakitYonetimi() {
   const totalOut = filteredFlows.filter(f => f.direction === 'out').reduce((sum, f) => sum + f.amount, 0);
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -378,6 +377,6 @@ export default function NakitYonetimi() {
           <Button variant={flowDirection === 'in' ? 'primary' : 'danger'}>{flowDirection === 'in' ? 'Giriş Kaydet' : 'Çıkış Kaydet'}</Button>
         </Modal.Footer>
       </Modal>
-    </MainLayout>
+    </>
   );
 }

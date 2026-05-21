@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Printer, Download, Search, Package, Plus, X, Eye, Loader2 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, CardHeader, CardTitle, Button, Input, Select, Modal, Alert } from '@/components/ui';
 import { productApi } from '@/lib/dolibarr';
 import type { Product } from '@/lib/types/dolibarr';
@@ -30,6 +29,16 @@ interface SelectedProduct {
   price: number;
   quantity: number;
 }
+
+const toSafePrice = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const normalized = value.replace(',', '.').trim();
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
 
 export default function BarkodBaski() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -77,7 +86,7 @@ export default function BarkodBaski() {
         ref: product.ref || '',
         name: product.label || '',
         barcode: product.barcode || '',
-        price: product.price || 0,
+        price: toSafePrice(product.price),
         quantity: 1,
       }]);
     }
@@ -232,7 +241,7 @@ export default function BarkodBaski() {
   };
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -337,7 +346,7 @@ export default function BarkodBaski() {
                         <div className="flex items-center gap-3">
                           <div className="text-right">
                             <p className="font-semibold text-primary">
-                              {product.price ? `${product.price.toFixed(2)} TL` : '-'}
+                              {toSafePrice(product.price) > 0 ? `${toSafePrice(product.price).toFixed(2)} TL` : '-'}
                             </p>
                             <p className="text-xs text-gray-500">
                               Stok: {product.stock_reel ?? '-'}
@@ -511,6 +520,6 @@ export default function BarkodBaski() {
           ))}
         </div>
       </div>
-    </MainLayout>
+    </>
   );
 }

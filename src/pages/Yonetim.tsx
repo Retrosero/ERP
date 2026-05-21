@@ -3,7 +3,6 @@ import {
   Plus, Users, Shield, Activity, Search, Filter,
   Edit, Trash2, Check, X, UserPlus, Key
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Table, Badge, Modal, StatCard } from '@/components/ui';
 
 // Mock data
@@ -56,7 +55,7 @@ export default function Yonetim() {
   const roleConfig = (roleId: string) => roles.find(r => r.id === roleId) || roles[5];
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -363,6 +362,6 @@ export default function Yonetim() {
           <Button variant="primary">Kaydet</Button>
         </Modal.Footer>
       </Modal>
-    </MainLayout>
+    </>
   );
 }

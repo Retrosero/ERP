@@ -3,7 +3,6 @@ import {
   Plus, Building2, Settings, ChevronRight, Check,
   FileText, Receipt, Users, BarChart3
 } from 'lucide-react';
-import { MainLayout } from '@/components/layout';
 import { Card, Button, Input, Select, Modal, StatCard } from '@/components/ui';
 
 // Mock data
@@ -69,7 +68,7 @@ export default function Sirketler() {
   const [selectedCompany, setSelectedCompany] = useState<typeof mockCompanies[0] | null>(null);
 
   return (
-    <MainLayout>
+    <>
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -338,6 +337,6 @@ export default function Sirketler() {
           <Button variant="primary">Kaydet</Button>
         </Modal.Footer>
       </Modal>
-    </MainLayout>
+    </>
   );
 }
