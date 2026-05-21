@@ -99,7 +99,7 @@ class DolibarrProxyService {
         };
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as T;
 
       // Cache successful GET requests
       if (useCache) {
@@ -148,7 +148,7 @@ class DolibarrProxyService {
       // Clear related cache entries on write operations
       this.clearCache();
 
-      const data = await response.json();
+      const data = (await response.json()) as T;
       return { success: true, data };
     } catch (error: any) {
       logger.error(`Dolibarr POST Error: ${error.message}`);
@@ -191,7 +191,7 @@ class DolibarrProxyService {
       // Clear related cache entries on write operations
       this.clearCache();
 
-      const data = await response.json();
+      const data = (await response.json()) as T;
       return { success: true, data };
     } catch (error: any) {
       logger.error(`Dolibarr PUT Error: ${error.message}`);
@@ -230,7 +230,7 @@ class DolibarrProxyService {
       // Clear related cache entries on write operations
       this.clearCache();
 
-      const data = response.status === 204 ? undefined : await response.json();
+      const data = response.status === 204 ? undefined : ((await response.json()) as T);
       return { success: true, data };
     } catch (error: any) {
       logger.error(`Dolibarr DELETE Error: ${error.message}`);
