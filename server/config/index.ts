@@ -13,8 +13,8 @@ export const config = {
 
   // Application Configuration
   app: {
-    port: parseInt(process.env.APP_PORT || '3001', 10),
-    url: process.env.APP_URL || 'http://localhost:3001',
+    port: parseInt(process.env.APP_PORT || '3005', 10),
+    url: process.env.APP_URL || 'http://localhost:3005',
     nodeEnv: process.env.NODE_ENV || 'development',
   },
 
