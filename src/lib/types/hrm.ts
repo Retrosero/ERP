@@ -126,7 +126,6 @@ export interface LeaveType {
   code: string;
   label: string;
   active: number;
- 迟迟?: number;
   delay?: number;
   delay_unit?: string;
   fk_user_author?: number;
